@@ -29,7 +29,7 @@
           ]
         }
       ],
-      "icon": "src/icon.ico"   // opsional, buat sendiri atau hapus
+      "icon": "src/icon.ico"
     },
     "portable": {
       "artifactName": "ThinkFlow-Cetak-Resi.exe"
