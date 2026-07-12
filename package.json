@@ -1,0 +1,42 @@
+{
+  "name": "thinkflow-cetak-resi",
+  "version": "1.0.0",
+  "description": "Aplikasi ThinkFlow + Cetak Resi portable",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable",
+    "build": "electron-builder --win portable",
+    "pack": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.thinkflow.cetakresi",
+    "productName": "ThinkFlow Cetak Resi",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "main.js",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "src/icon.ico"   // opsional, buat sendiri atau hapus
+    },
+    "portable": {
+      "artifactName": "ThinkFlow-Cetak-Resi.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1"
+  }
+}
