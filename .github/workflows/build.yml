@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  # Izinkan penggunaan Node.js 20 meskipun sudah deprecated
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
 jobs:
   build:
     runs-on: windows-latest
@@ -18,7 +22,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # cache: 'npm'   <-- dihapus agar tidak memerlukan lock file
 
       - name: Install dependencies
         run: npm install
