@@ -1,258 +1,1464 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nyetak Gambar jeung Resi - Versi Siku</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Think Flow + Cetak Resi</title>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js">
+    </script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; background: #0f172a; height: 100vh; overflow: hidden; }
-        #app { display: flex; flex-direction: column; height: 100%; }
-
-        .header {
-            background: #1e293b; border-bottom: 1px solid #334155;
-            padding: 12px 20px; display: flex; justify-content: space-between;
-            align-items: center; color: white; z-index: 50;
+        /* ===== RESET & VARIABEL ===== */
+        :root {
+            --whatsapp-green: #25D366;
+            --whatsapp-dark: #075E54;
+            --whatsapp-light: #128C7E;
+            --whatsapp-bg: #E5DDD5;
+            --whatsapp-chat-bg: #ECE5DD;
+            --bubble-out: #DCF8C6;
+            --bubble-in: #FFFFFF;
+            --text-primary: #1A1A1A;
+            --text-secondary: #667781;
+            --border-light: #E9EDEF;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --radius: 12px;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --sidebar-bg: #F0F2F5;
+            --chat-header-bg: #F0F2F5;
         }
-        .header h1 { font-size: 1.5rem; font-weight: 900; font-style: italic;
-            text-decoration: underline; text-decoration-color: #3b82f6; }
-        .controls { display: flex; gap: 12px; align-items: center; }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body,
+        html {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* ===== NAVBAR TAB ===== */
+        #app-nav {
+            background: #1e293b;
+            padding: 8px 16px;
+            display: flex;
+            gap: 12px;
+            border-bottom: 1px solid #334155;
+            z-index: 1000;
+            position: relative;
+            flex-shrink: 0;
+        }
+        #app-nav .tab-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        #app-nav .tab-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        #app-nav .tab-btn:hover {
+            background: #334155;
+            color: white;
+        }
+        #app-nav .tab-badge {
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            padding: 0 8px;
+            font-size: 0.7rem;
+            margin-left: 4px;
+            display: inline-block;
+        }
+
+        /* ===== MODUL CHAT ===== */
+        #module-chat {
+            display: none;
+            height: calc(100vh - 56px);
+            background: var(--whatsapp-bg);
+            flex-direction: column;
+        }
+        #module-chat.active {
+            display: flex;
+        }
+
+        /* Login screen (di dalam chat) */
+        #chat-login-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--whatsapp-bg);
+            padding: 20px;
+            flex-direction: column;
+        }
+        #chat-login-screen.hidden {
+            display: none;
+        }
+        .login-box {
+            background: white;
+            padding: 40px 32px;
+            border-radius: 24px;
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        .login-box .logo {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--whatsapp-dark);
+            margin-bottom: 6px;
+        }
+        .login-box .sub {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+        .login-box .input {
+            background: #F0F2F5;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            width: 100%;
+            transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .login-box .input:focus {
+            outline: 2px solid var(--whatsapp-green);
+            background: white;
+        }
+        .login-box .btn {
+            border: none;
+            background: var(--whatsapp-green);
+            color: white;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 10px;
+            width: 100%;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 12px;
+            font-family: 'Inter', sans-serif;
+        }
+        .login-box .btn:active {
+            transform: scale(0.97);
+        }
+        .login-box .hint {
+            margin-top: 16px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        /* Chat app layout */
+        #chat-app {
+            display: none;
+            height: 100%;
+            background: var(--whatsapp-bg);
+        }
+        #chat-app.active {
+            display: flex;
+        }
+
+        .chat-app-layout {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            background: white;
+            overflow: hidden;
+        }
+
+        /* Sidebar chat */
+        .chat-sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        .chat-sidebar-header {
+            padding: 12px 16px;
+            background: var(--whatsapp-dark);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            min-height: 64px;
+        }
+        .chat-sidebar-header .user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .chat-sidebar-header .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--whatsapp-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .chat-sidebar-header .user-info .name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100px;
+        }
+        .chat-sidebar-header .user-info .status {
+            font-size: 0.65rem;
+            opacity: 0.85;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .chat-sidebar-header .user-info .status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #aaa;
+            display: inline-block;
+        }
+        .chat-sidebar-header .user-info .status .dot.online {
+            background: var(--whatsapp-green);
+        }
+        .chat-sidebar-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .chat-sidebar-actions .btn-icon {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.15s;
+            touch-action: manipulation;
+        }
+        .chat-sidebar-actions .btn-icon:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.92);
+        }
+
+        /* ===== FIX: Connect area lebih kompak & tidak tertutup ===== */
+        .chat-connect-area {
+            padding: 6px 12px;
+            background: white;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 5;
+            align-items: center;
+        }
+        .chat-connect-area .input {
+            flex: 1 1 auto;
+            min-width: 0;
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            background: #F0F2F5;
+            transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+            height: 34px;
+        }
+        .chat-connect-area .input:focus {
+            outline: none;
+            border-color: var(--whatsapp-green);
+            background: white;
+        }
+        .chat-connect-area .btn {
+            border: none;
+            background: var(--whatsapp-green);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.15s;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            touch-action: manipulation;
+            flex-shrink: 0;
+            height: 34px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-connect-area .btn:active {
+            transform: scale(0.95);
+        }
+
+        .chat-peer-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+            background: white;
+        }
+        .chat-peer-list-container .label {
+            padding: 6px 16px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .chat-peer-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 16px;
+            gap: 10px;
+            cursor: default;
+            transition: 0.1s;
+        }
+        .chat-peer-item:hover {
+            background: #F0F2F5;
+        }
+        .chat-peer-item .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--whatsapp-light);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+        .chat-peer-item .info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+            min-width: 0;
+        }
+        .chat-peer-item .info .name {
+            font-weight: 500;
+            font-size: 0.8rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .chat-peer-item .info .status-text {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+        .chat-peer-item .remove-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: 0.15s;
+            touch-action: manipulation;
+            flex-shrink: 0;
+        }
+        .chat-peer-item .remove-btn:active {
+            background: rgba(0, 0, 0, 0.05);
+            color: #e74c3c;
+        }
+        .chat-peer-item .online-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--whatsapp-green);
+            flex-shrink: 0;
+        }
+        .chat-peer-item .offline-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+            flex-shrink: 0;
+        }
+        .chat-peer-empty {
+            padding: 24px 16px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        .chat-sidebar-footer {
+            padding: 8px 12px;
+            border-top: 1px solid var(--border-light);
+            background: #F0F2F5;
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .chat-sidebar-footer .btn {
+            flex: 1;
+            border: none;
+            background: white;
+            padding: 6px 10px;
+            border-radius: 16px;
+            font-weight: 500;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: 0.15s;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            min-height: 30px;
+        }
+        .chat-sidebar-footer .btn:active {
+            transform: scale(0.95);
+            background: #e9ecef;
+        }
+        .chat-sidebar-footer .btn.danger {
+            color: #e74c3c;
+        }
+
+        /* Main chat area */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: var(--whatsapp-chat-bg);
+            position: relative;
+            min-width: 0;
+        }
+        .chat-header {
+            padding: 8px 16px;
+            background: var(--chat-header-bg);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            min-height: 56px;
+        }
+        .chat-header .left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .chat-header .left .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--whatsapp-light);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .chat-header .left .info .name {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .chat-header .left .info .sub {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+        .chat-header .right {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .chat-header .right .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.15s;
+            touch-action: manipulation;
+        }
+        .chat-header .right .btn-icon:active {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .chat-header .right .btn-icon.print-resi {
+            color: var(--whatsapp-dark);
+        }
+        .chat-header .right .btn-icon.print-gambar {
+            color: #3b82f6;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48cGF0aCBkPSJNMzAgMjB2MTBIMTBWMjBoMjB6TTAgMGg0MHY0MEgweiIgZmlsbD0iI2U1ZGRkNSIgb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==');
+            background-size: 40px 40px;
+        }
+        .chat-messages .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Bubble chat */
+        .msg-card {
+            max-width: 70%;
+            border-radius: 10px;
+            padding: 6px 12px;
+            position: relative;
+            word-break: break-word;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2px;
+            border: none;
+            background: transparent;
+        }
+        .msg-card.in {
+            align-self: flex-start;
+            background: var(--bubble-in);
+            border-bottom-left-radius: 3px;
+        }
+        .msg-card.out {
+            align-self: flex-end;
+            background: var(--bubble-out);
+            border-bottom-right-radius: 3px;
+        }
+        .msg-card .msg-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 6px;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            padding-bottom: 2px;
+            flex-wrap: wrap;
+        }
+        .msg-card .msg-header .sender {
+            font-weight: 600;
+            color: var(--whatsapp-dark);
+            font-size: 0.7rem;
+        }
+        .msg-card .msg-header .badge {
+            font-size: 0.5rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 1px 6px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+        }
+        .msg-card .msg-body {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            padding: 2px 0;
+        }
+        .msg-card .msg-body img {
+            max-width: 100%;
+            border-radius: 6px;
+            margin-top: 4px;
+            cursor: pointer;
+        }
+        .msg-card .msg-body .file-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-top: 4px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .msg-card .msg-body .file-box:active {
+            background: rgba(0, 0, 0, 0.08);
+        }
+        .msg-card .msg-footer {
+            font-size: 0.55rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 6px;
+            padding-top: 2px;
+            flex-wrap: wrap;
+        }
+        .msg-card .msg-footer .actions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .msg-card .msg-footer .btn-mini {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.55rem;
+            padding: 2px 6px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.1s;
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        .msg-card .msg-footer .btn-mini:active {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .msg-card .msg-footer .btn-mini.primary {
+            color: var(--whatsapp-light);
+        }
+        .msg-card .msg-footer .btn-mini.success {
+            color: var(--whatsapp-green);
+        }
+
+        .forward-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .forward-dropdown .menu {
+            display: none;
+            position: absolute;
+            bottom: 120%;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 4px 0;
+            min-width: 140px;
+            z-index: 100;
+        }
+        .forward-dropdown .menu.open {
+            display: block;
+        }
+        .forward-dropdown .menu-item {
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            color: var(--text-primary);
+            transition: 0.1s;
+            white-space: nowrap;
+        }
+        .forward-dropdown .menu-item:active {
+            background: #F0F2F5;
+        }
+
+        /* Chat input */
+        .chat-input {
+            background: #F0F2F5;
+            padding: 6px 12px 10px;
+            border-top: 1px solid var(--border-light);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .chat-input .job-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .chat-input .job-row {
+            background: white;
+            border-radius: 10px;
+            padding: 6px 10px;
+            border: 1px solid var(--border-light);
+            transition: 0.1s;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .chat-input .job-row .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-input .job-row .top .label {
+            font-size: 0.55rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .chat-input .job-row .top .remove-job {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 0.7rem;
+            cursor: pointer;
+            padding: 0 4px;
+            touch-action: manipulation;
+        }
+        .chat-input .job-row .top .remove-job:active {
+            color: #e74c3c;
+        }
+        .chat-input .job-row .thumb-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 2px;
+        }
+        .chat-input .job-row .thumb-box {
+            width: 32px;
+            height: 32px;
+            background: #eee;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border-light);
+        }
+        .chat-input .job-row .thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .chat-input .job-row .thumb-box .del {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #e74c3c;
+            color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            cursor: pointer;
+            line-height: 1;
+            touch-action: manipulation;
+        }
+        .chat-input .job-row .add-thumb {
+            width: 32px;
+            height: 32px;
+            border: 1px dashed var(--whatsapp-green);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: var(--whatsapp-green);
+            background: white;
+            touch-action: manipulation;
+        }
+        .chat-input .job-row .input {
+            border: none;
+            background: #F0F2F5;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 2px;
+        }
+        .chat-input .job-row .input:focus {
+            outline: 2px solid var(--whatsapp-green);
+            background: white;
+        }
+        .chat-input .job-row textarea.input {
+            min-height: 30px;
+            resize: vertical;
+        }
+        .chat-input .input-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .chat-input .input-actions .btn {
+            border: none;
+            background: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-weight: 500;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: 0.15s;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            touch-action: manipulation;
+            min-height: 30px;
+        }
+        .chat-input .input-actions .btn:active {
+            transform: scale(0.95);
+        }
+        .chat-input .input-actions .btn-primary {
+            background: var(--whatsapp-green);
+            color: white;
+            flex: 1;
+            justify-content: center;
+        }
+        .chat-input .input-actions .btn-primary:active {
+            background: var(--whatsapp-light);
+        }
+        .chat-input .input-actions .btn-outline {
+            border: 1px solid var(--border-light);
+            background: white;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: calc(20px + var(--safe-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 24px;
+            border-radius: 30px;
+            background: var(--whatsapp-dark);
+            color: white;
+            font-weight: 500;
+            font-size: 0.8rem;
+            z-index: 20000;
+            animation: fadeIn 0.25s;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            max-width: 90vw;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .toast.error {
+            background: #e74c3c;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* ============================================================ */
+        /* ===== MODUL CETAK ===== */
+        #module-cetak {
+            display: none;
+            height: calc(100vh - 56px);
+            background: #0f172a;
+            flex-direction: column;
+        }
+        #module-cetak.active {
+            display: flex;
+        }
+
+        /* Style cetak (diambil dari RESI+LOG) */
+        .cetak-header {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .cetak-header h1 {
+            font-size: 1.1rem;
+            font-weight: 900;
+            font-style: italic;
+            text-decoration: underline;
+            text-decoration-color: #3b82f6;
+        }
+        .cetak-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
         .paper-select {
-            background: #334155; padding: 6px 12px; border-radius: 8px;
-            display: flex; gap: 8px; align-items: center; font-size: 13px;
+            background: #334155;
+            padding: 4px 12px;
+            border-radius: 8px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 12px;
         }
-        .paper-select select, .paper-select input {
-            background: #1e293b; border: 1px solid #475569; color: white;
-            font-weight: bold; outline: none; padding: 2px 5px; border-radius: 4px;
+        .paper-select select,
+        .paper-select input {
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: white;
+            font-weight: bold;
+            outline: none;
+            padding: 2px 5px;
+            border-radius: 4px;
         }
-        .print-btn { background: #3b82f6; color: white; border: none;
-            padding: 8px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .print-btn:hover { background: #2563eb; }
+        .print-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 6px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .print-btn:hover {
+            background: #2563eb;
+        }
 
-        .main { display: flex; flex: 1; overflow: hidden; }
-        .sidebar {
-            width: 320px; background: #1e293b; border-right: 1px solid #334155;
-            display: flex; flex-direction: column; color: white;
+        .cetak-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
         }
-        .tab-nav { display: flex; background: #0f172a; padding: 8px 8px 0 8px; gap: 4px; }
-        .tab-btn {
-            flex: 1; padding: 10px 4px; border: none; background: #1e293b; color: #94a3b8;
-            cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 11px;
-            display: flex; align-items: center; justify-content: center; gap: 4px;
+        .cetak-sidebar {
+            width: 320px;
+            background: #1e293b;
+            border-right: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            color: white;
+            flex-shrink: 0;
         }
-        .tab-btn.active { background: #3b82f6; color: white; }
-        .badge { background: #ef4444; color: white; border-radius: 50%;
-            padding: 2px 8px; font-size: 10px; margin-left: 5px; display: inline-block; line-height: 1.4; }
-
-        .tab-content { flex: 1; display: none; flex-direction: column; overflow: hidden; }
-        .tab-content.active { display: flex; }
-
-        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 15px; }
-        .slider-group { margin-bottom: 16px; }
-        .slider-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
-        .numeric-input { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        .cetak-tab-nav {
+            display: flex;
+            background: #0f172a;
+            padding: 6px 6px 0 6px;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .cetak-tab-btn {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            background: #1e293b;
+            color: #94a3b8;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .cetak-tab-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .cetak-tab-content {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .cetak-tab-content.active {
+            display: flex;
+        }
+        .cetak-sidebar-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .slider-group {
+            margin-bottom: 14px;
+        }
+        .slider-group label {
+            display: block;
+            font-size: 10px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .numeric-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
         .numeric-input input {
-            width: 100%; background: #334155; border: 1px solid #475569;
-            color: white; padding: 6px; border-radius: 4px;
+            width: 100%;
+            background: #334155;
+            border: 1px solid #475569;
+            color: white;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 12px;
         }
-        .info-box { background: #334155; padding: 10px; border-radius: 8px; font-size: 12px; margin-top: 10px; }
+        .info-box {
+            background: #334155;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+        .btn-blue {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-red {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+        }
 
-        .asset-grid-title { display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 0; font-size: 11px; font-weight: bold; color: #3b82f6; border-top: 1px solid #334155; }
-        .asset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .asset-grid-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 10px;
+            font-weight: bold;
+            color: #3b82f6;
+            border-top: 1px solid #334155;
+        }
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
         .asset-item {
-            background: #334155; border-radius: 6px; overflow: hidden; cursor: pointer;
-            border: 2px solid transparent; position: relative;
+            background: #334155;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
         }
-        .asset-item:hover { border-color: #3b82f6; }
-        .asset-item img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #000; display: block; }
-        .asset-item .name { padding: 4px; font-size: 9px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .asset-item:hover {
+            border-color: #3b82f6;
+        }
+        .asset-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: contain;
+            background: #000;
+            display: block;
+        }
+        .asset-item .name {
+            padding: 4px;
+            font-size: 8px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         .rotate-btn {
-            position: absolute; top: 5px; right: 5px; background: #3b82f6; color: white;
-            border: none; width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 14px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
         }
 
-        .history-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
-        .history-item { background: #334155; border-radius: 6px; overflow: hidden; cursor: pointer; font-size: 9px; text-align: center; }
-        .history-item img { width: 100%; aspect-ratio: 1; object-fit: cover; }
-
-        /* Histori Cetak CSS */
+        .history-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .history-item {
+            background: #334155;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            font-size: 8px;
+            text-align: center;
+        }
+        .history-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+        }
         .history-log-card {
-            background: #334155; border-left: 4px solid #3b82f6; padding: 10px;
-            border-radius: 6px; font-size: 11px; color: #f1f5f9; position: relative; margin-bottom: 8px;
+            background: #334155;
+            border-left: 4px solid #3b82f6;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            color: #f1f5f9;
+            position: relative;
+            margin-bottom: 6px;
         }
-        .history-log-card .highlight { color: #3b82f6; font-weight: bold; }
+        .history-log-card .highlight {
+            color: #3b82f6;
+            font-weight: bold;
+        }
 
-        .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .toolbar { background: #1e293b; padding: 10px 20px; display: flex; gap: 12px;
-            border-bottom: 1px solid #334155; align-items: center; }
-        .canvas-container {
-            flex: 1; overflow: auto; padding: 20px; display: none;
-            flex-direction: column; align-items: center; gap: 30px; background: #0f172a;
+        .cetak-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
         }
-        .canvas-container.active { display: flex; }
+        .cetak-toolbar {
+            background: #1e293b;
+            padding: 6px 16px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #334155;
+            align-items: center;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .canvas-container {
+            flex: 1;
+            overflow: auto;
+            padding: 16px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            background: #0f172a;
+        }
+        .canvas-container.active {
+            display: flex;
+        }
 
         .paper-page {
-            background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: flex-start;
-            align-items: flex-start; position: relative; flex-shrink: 0;
-            padding: 0 !important; gap: 0 !important;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            justify-content: flex-start;
+            align-items: flex-start;
+            position: relative;
+            flex-shrink: 0;
+            padding: 0 !important;
+            gap: 0 !important;
         }
-
         .slot {
-            border: 0.1mm dashed #aaa; position: relative; display: flex;
-            align-items: center; justify-content: center; overflow: hidden; background: #fafafa;
-            flex-shrink: 0; margin: 0 !important; padding: 0 !important;
+            border: 0.1mm dashed #aaa;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #fafafa;
+            flex-shrink: 0;
+            margin: 0 !important;
+            padding: 0 !important;
         }
-        .slot img { 
-            max-width: 100% !important; max-height: 100% !important; 
-            width: auto !important; height: auto !important; display: block; 
+        .slot img {
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: auto !important;
+            height: auto !important;
+            display: block;
         }
-
         .slot.img-mode {
             position: absolute !important;
             left: var(--x-screen) !important;
             top: var(--y-screen) !important;
-            border: none !important; overflow: hidden; background: transparent;
+            border: none !important;
+            overflow: hidden;
+            background: transparent;
             outline: none !important;
         }
         .slot.img-mode img {
-            width: 100% !important; height: 100% !important;
-            display: block; object-fit: fill;
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            object-fit: fill;
         }
-
         .crop-mark {
-            position: absolute; width: var(--crop-len); height: var(--crop-len);
-            pointer-events: none; z-index: 25; display: none;
+            position: absolute;
+            width: var(--crop-len);
+            height: var(--crop-len);
+            pointer-events: none;
+            z-index: 25;
+            display: none;
         }
-        .slot.img-mode:not(.no-crop) .crop-mark { display: block; }
-        .crop-mark.tl { top: var(--crop-offset); left: var(--crop-offset); border-top: var(--crop-thick) solid #000; border-left: var(--crop-thick) solid #000; }
-        .crop-mark.tr { top: var(--crop-offset); right: var(--crop-offset); border-top: var(--crop-thick) solid #000; border-right: var(--crop-thick) solid #000; }
-        .crop-mark.bl { bottom: var(--crop-offset); left: var(--crop-offset); border-bottom: var(--crop-thick) solid #000; border-left: var(--crop-thick) solid #000; }
-        .crop-mark.br { bottom: var(--crop-offset); right: var(--crop-offset); border-bottom: var(--crop-thick) solid #000; border-right: var(--crop-thick) solid #000; }
-
+        .slot.img-mode:not(.no-crop) .crop-mark {
+            display: block;
+        }
+        .crop-mark.tl {
+            top: var(--crop-offset);
+            left: var(--crop-offset);
+            border-top: var(--crop-thick) solid #000;
+            border-left: var(--crop-thick) solid #000;
+        }
+        .crop-mark.tr {
+            top: var(--crop-offset);
+            right: var(--crop-offset);
+            border-top: var(--crop-thick) solid #000;
+            border-right: var(--crop-thick) solid #000;
+        }
+        .crop-mark.bl {
+            bottom: var(--crop-offset);
+            left: var(--crop-offset);
+            border-bottom: var(--crop-thick) solid #000;
+            border-left: var(--crop-thick) solid #000;
+        }
+        .crop-mark.br {
+            bottom: var(--crop-offset);
+            right: var(--crop-offset);
+            border-bottom: var(--crop-thick) solid #000;
+            border-right: var(--crop-thick) solid #000;
+        }
         .delete-btn {
-            position: absolute; top: 2px; right: 2px; background: rgba(220,38,38,0.8);
-            color: white; border: none; width: 22px; height: 22px; border-radius: 4px;
-            cursor: pointer; display: none; z-index: 30;
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(220, 38, 38, 0.8);
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: none;
+            z-index: 30;
+            font-size: 12px;
         }
-        .slot:hover .delete-btn { display: block; }
-        .page-label { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.3);
-            color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; z-index: 50; }
+        .slot:hover .delete-btn {
+            display: block;
+        }
+        .page-label {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            z-index: 50;
+        }
 
+        /* Upload preview */
+        .upload-area {
+            border: 2px dashed #475569;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #0f172a;
+            color: #94a3b8;
+        }
+        .upload-area.dragover {
+            border-color: #3b82f6;
+            background: #1e293b;
+        }
+        .upload-preview-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .upload-preview-item {
+            position: relative;
+            width: 56px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #334155;
+        }
+        .upload-preview-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .upload-preview-item .name {
+            font-size: 7px;
+            text-align: center;
+            padding: 2px;
+            color: #ccc;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .upload-preview-item .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(220, 38, 38, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        /* ===== SHARED IMAGES (dari chat) ===== */
+        .chat-images-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .chat-image-item {
+            width: 56px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+        }
+        .chat-image-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+        }
+        .chat-image-item .add-btn {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        /* ===== PRINT OVERRIDE ===== */
         @media print {
-            .no-print,
-            .header,
-            .sidebar,
-            .toolbar,
-            .tab-nav,
-            .tab-content:not(.active),
-            .page-label,
-            .delete-btn,
-            .rotate-btn,
-            .btn-blue,
-            .btn-red,
-            .print-btn,
-            .controls,
-            .asset-grid,
-            .asset-grid-title,
-            .upload-area,
-            .upload-preview-list,
-            .history-list,
-            .info-box,
-            .slider-group,
-            .numeric-input,
-            #resiBadge,
-            #pageCounter,
-            .paper-select,
-            #mainTitle {
+            .no-print {
                 display: none !important;
             }
-
-            body, html {
+            body,
+            html {
                 background: white !important;
                 height: auto !important;
                 overflow: visible !important;
-                margin: 0 !important;
-                padding: 0 !important;
             }
-
-            #app, .main, .content {
+            #app-nav,
+            #module-chat {
+                display: none !important;
+            }
+            #module-cetak {
                 display: block !important;
                 height: auto !important;
                 overflow: visible !important;
-                position: static !important;
                 background: white !important;
-                padding: 0 !important;
-                margin: 0 !important;
             }
-
-            .canvas-container.active {
+            .cetak-sidebar,
+            .cetak-toolbar,
+            .cetak-header .controls,
+            .cetak-header .paper-select,
+            .cetak-header .print-btn {
+                display: none !important;
+            }
+            .cetak-main {
+                display: block !important;
+            }
+            .cetak-content {
+                display: block !important;
+            }
+            .canvas-container {
                 display: block !important;
                 background: white !important;
                 padding: 0 !important;
-                margin: 0 !important;
-                overflow: visible !important;
-                position: static !important;
             }
-
             .paper-page {
-                position: relative !important;
                 box-shadow: none !important;
                 margin: 0 !important;
                 page-break-after: always;
-                page-break-inside: avoid;
                 border: none !important;
-                overflow: visible !important;
                 background: white !important;
-                display: flex !important;
-                flex-wrap: wrap !important;
-                align-content: flex-start !important;
-                justify-content: flex-start !important;
-                align-items: flex-start !important;
-                padding: 0 !important;
-                gap: 0 !important;
             }
-
             .slot.img-mode {
                 position: absolute !important;
                 left: var(--x-print, 0) !important;
                 top: var(--y-print, 0) !important;
                 width: var(--slot-width, auto) !important;
                 height: var(--slot-height, auto) !important;
-                margin: 0 !important;
-                padding: 0 !important;
                 border: none !important;
-                overflow: visible !important;
                 background: transparent !important;
             }
-
-            .slot:not(.img-mode) {
-                border: 0.1mm dashed #999 !important;
-                position: relative !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-
             .slot.img-mode img {
                 display: block !important;
                 width: 100% !important;
                 height: 100% !important;
-                max-width: none !important;
-                max-height: none !important;
                 object-fit: fill !important;
-                visibility: visible !important;
-                opacity: 1 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-
             .crop-mark {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -262,742 +1468,1804 @@
                 display: none !important;
             }
         }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .chat-sidebar {
+                width: 220px;
+            }
+            .cetak-sidebar {
+                width: 240px;
+            }
+            .msg-card {
+                max-width: 85%;
+            }
+            .chat-sidebar-header .user-info .name {
+                max-width: 70px;
+            }
+        }
+        @media (max-width: 480px) {
+            .chat-app-layout {
+                flex-direction: column;
+            }
+            .chat-sidebar {
+                width: 100%;
+                height: 42vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border-light);
+            }
+            .chat-main {
+                height: 58vh;
+            }
+            .cetak-sidebar {
+                width: 100%;
+                height: 42vh;
+                border-right: none;
+                border-bottom: 1px solid #334155;
+            }
+            .cetak-content {
+                height: 58vh;
+            }
+            .login-box {
+                padding: 24px 16px;
+            }
+            .chat-sidebar-header {
+                padding: 8px 12px;
+                min-height: 52px;
+            }
+            .chat-sidebar-header .avatar {
+                width: 30px;
+                height: 30px;
+                font-size: 0.8rem;
+            }
+            .chat-sidebar-header .user-info .name {
+                font-size: 0.75rem;
+                max-width: 60px;
+            }
+            .chat-connect-area {
+                padding: 4px 10px;
+            }
+            .chat-connect-area .input {
+                padding: 4px 10px;
+                font-size: 0.7rem;
+                height: 30px;
+            }
+            .chat-connect-area .btn {
+                padding: 4px 10px;
+                font-size: 0.65rem;
+                height: 30px;
+            }
+            .chat-sidebar-footer .btn {
+                font-size: 0.6rem;
+                padding: 4px 8px;
+                min-height: 26px;
+            }
+            .chat-header {
+                padding: 6px 12px;
+                min-height: 48px;
+            }
+            .chat-header .left .avatar {
+                width: 30px;
+                height: 30px;
+                font-size: 0.8rem;
+            }
+            .chat-header .left .info .name {
+                font-size: 0.75rem;
+            }
+            .chat-messages {
+                padding: 8px 12px;
+            }
+            .msg-card {
+                max-width: 90%;
+                padding: 4px 10px;
+            }
+            .msg-card .msg-body {
+                font-size: 0.75rem;
+            }
+            .chat-input {
+                padding: 4px 10px 8px;
+            }
+            .chat-input .job-row {
+                padding: 4px 8px;
+            }
+            .chat-input .input-actions .btn {
+                font-size: 0.6rem;
+                padding: 4px 10px;
+                min-height: 26px;
+            }
+            .cetak-header h1 {
+                font-size: 0.9rem;
+            }
+            .cetak-header {
+                padding: 6px 12px;
+            }
+            .paper-select {
+                font-size: 10px;
+                padding: 2px 8px;
+            }
+            .print-btn {
+                font-size: 0.8rem;
+                padding: 4px 14px;
+            }
+            .cetak-sidebar-scroll {
+                padding: 8px;
+            }
+            .cetak-tab-btn {
+                font-size: 9px;
+                padding: 6px 2px;
+            }
+        }
+        @media (max-width: 380px) {
+            .chat-sidebar-header .user-info .name {
+                max-width: 40px;
+                font-size: 0.65rem;
+            }
+            .chat-sidebar-header .avatar {
+                width: 26px;
+                height: 26px;
+                font-size: 0.7rem;
+            }
+            .chat-connect-area .btn {
+                font-size: 0.55rem;
+                padding: 4px 8px;
+            }
+            .chat-connect-area .input {
+                font-size: 0.6rem;
+                padding: 4px 8px;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div id="app">
-    <header class="header no-print">
-        <h1 id="mainTitle">STUDIO CETAK RESI</h1>
-        <div class="controls">
-            <div class="paper-select">
-                <span>KERTAS:</span>
-                <select id="paperType">
-                    <option value="A4">A4 (210x297mm)</option>
-                    <option value="A3">A3 (297x420mm)</option>
-                    <option value="A3+">A3+ (329x483mm)</option>
-                    <option value="custom">Karso</option>
-                </select>
-                <span id="customDim" style="display: none;">
-                    <input type="number" id="custW" value="210" style="width:55px"> x
-                    <input type="number" id="custH" value="297" style="width:55px"> mm
-                </span>
-            </div>
-            <button class="print-btn" onclick="window.print()">CETAK</button>
-        </div>
-    </header>
-
-    <div class="main">
-        <aside class="sidebar no-print">
-            <nav class="tab-nav">
-                <button id="btn-tab-resi" class="tab-btn active" onclick="openTab('resi')">
-                    NYETAK RESI <span id="resiBadge" class="badge">0</span>
-                </button>
-                <button id="btn-tab-image" class="tab-btn" onclick="openTab('image')">NYETAK GAMBAR</button>
-                <button id="btn-tab-history" class="tab-btn" onclick="openTab('history')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    HISTORI
-                </button>
-            </nav>
-
-            <div id="tab-resi" class="tab-content active">
-                <div class="sidebar-scroll">
-                    <div class="slider-group">
-                        <label>Lebar Resi (mm)</label>
-                        <div class="numeric-input">
-                            <input type="range" id="resiWidthRange" min="20" max="210" value="100">
-                            <input type="number" id="resiWidthNum" value="100">
-                        </div>
-                    </div>
-                    <div class="slider-group">
-                        <label>Tinggi Resi (mm)</label>
-                        <div class="numeric-input">
-                            <input type="range" id="resiHeightRange" min="20" max="297" value="150">
-                            <input type="number" id="resiHeightNum" value="150">
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <div>Kapasitas/Hal: <span id="resiCapacity">0</span></div>
-                        <div>Total Item: <span id="resiTotal">0</span></div>
-                    </div>
-                    <br>
-                    <button class="btn-blue" style="width:100%" onclick="document.getElementById('pdfInp').click()">+ UPLOAD PDF RESI</button>
-                    <input type="file" id="pdfInp" multiple accept="application/pdf" style="display:none">
-                    <div id="resiHistory" class="history-list"></div>
-                </div>
-            </div>
-
-            <div id="tab-image" class="tab-content">
-                <div class="sidebar-scroll">
-                    <div class="slider-group">
-                        <label>Upload Gambar Sendiri</label>
-                        <div class="upload-area" id="uploadArea" onclick="document.getElementById('imgUpload').click()">
-                            <div class="icon">📁</div>
-                            <p>Klik atau tarik gambar ke sini</p>
-                            <p style="font-size:10px; color:#64748b;">JPG, PNG, WEBP (max 10MB)</p>
-                        </div>
-                        <input type="file" id="imgUpload" multiple accept="image/*" style="display:none">
-                        <div id="uploadPreview" class="upload-preview-list"></div>
-                    </div>
-
-                    <div class="slider-group">
-                        <label>Ukuran (W x H mm)</label>
-                        <div class="numeric-input">
-                            <input type="number" id="imgW" value="50">
-                            <span>x</span>
-                            <input type="number" id="imgH" value="50">
-                        </div>
-                    </div>
-                    <div class="slider-group">
-                        <label>Jarak / Gap (mm) — hanya tampilan, saat print dihilangkan</label>
-                        <div class="numeric-input">
-                            <input type="number" id="imgGap" value="0" min="0">
-                        </div>
-                    </div>
-
-                    <div class="slider-group">
-                        <label>Panjang Kres (mm)</label>
-                        <div class="numeric-input">
-                            <input type="range" id="cropLen" min="2" max="15" value="5" step="0.5">
-                            <input type="number" id="cropLenNum" value="5" step="0.5">
-                        </div>
-                    </div>
-                    <div class="slider-group">
-                        <label>Tebal Kres (mm)</label>
-                        <div class="numeric-input">
-                            <input type="range" id="cropThick" min="0.1" max="1" value="0.2" step="0.05">
-                            <input type="number" id="cropThickNum" value="0.2" step="0.05">
-                        </div>
-                    </div>
-                    <div class="slider-group">
-                        <label>Offset Kres (mm) — jarak dari sudut</label>
-                        <div class="numeric-input">
-                            <input type="range" id="cropOffset" min="0" max="5" value="0" step="0.5">
-                            <input type="number" id="cropOffsetNum" value="0" step="0.5">
-                        </div>
-                    </div>
-                    <div class="slider-group">
-                        <label><input type="checkbox" id="showCrop" checked> Tampilkan Kres</label>
-                    </div>
-
-                    <div class="asset-grid-title">
-                        TINGGAL MILIH
-                        <button class="btn-blue" style="padding:2px 8px; font-size:10px" onclick="loadAssets()">MUAT</button>
-                    </div>
-                    <div id="assetGrid" class="asset-grid"></div>
-                </div>
-            </div>
-
-            <!-- Tab Histori Cetak -->
-            <div id="tab-history" class="tab-content">
-                <div class="sidebar-scroll">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #334155; padding-bottom: 8px;">
-                        <span style="font-size: 11px; font-weight: bold; color: #3b82f6; text-transform: uppercase;">LOG CETAK RESI</span>
-                        <button onclick="clearPrintHistory()" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: bold; cursor: pointer;">HAPUS SEMUA</button>
-                    </div>
-
-                    <!-- Panel Total Cetak Hari Ini (Tetap ada di atas sebagai ringkasan instan) -->
-                    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="font-size: 10px; color: #94a3b8; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 13px;">📅</span> TOTAL RESI HARI INI
-                        </div>
-                        <span id="totalResiToday" style="font-size: 20px; font-weight: 900; color: #10b981;">0</span>
-                    </div>
-
-                    <div id="historyLogList"></div>
-                </div>
-            </div>
-        </aside>
-
-        <main class="content">
-            <div class="toolbar no-print">
-                <button class="btn-red" onclick="clearCanvas()">RESET LAYAR</button>
-                <span id="pageCounter" style="color:white; font-size:12px; margin-left:auto">Item: 0 | Halaman: 0</span>
-            </div>
-            <div id="canvas-resi" class="canvas-container active"></div>
-            <div id="canvas-image" class="canvas-container"></div>
-        </main>
+    <!-- ===== NAVBAR TAB ===== -->
+    <div id="app-nav" class="no-print">
+        <button class="tab-btn active" onclick="switchModule('chat')" id="tab-chat">💬 Chat</button>
+        <button class="tab-btn" onclick="switchModule('cetak')" id="tab-cetak">🖨️ Cetak Resi</button>
     </div>
-</div>
 
-<script>
-let currentMode = 'resi';
-let resiData = [];
-let imageData = [];
-let assetList = [];
-let uploadedImages = [];
-const PAPER_SIZES = { 'A4': [210, 297], 'A3': [297, 420], 'A3+': [329, 483] };
+    <!-- ===== MODUL CHAT ===== -->
+    <div id="module-chat" class="active">
+        <!-- Login Screen -->
+        <div id="chat-login-screen">
+            <div class="login-box">
+                <div class="logo">💬 Think Flow</div>
+                <div class="sub">P2P Data Exchange</div>
+                <input type="text" id="login-name" class="input" placeholder="Masukkan nama / ID Anda..." value="">
+                <button class="btn" onclick="doLogin()">MASUK</button>
+                <div class="hint">Gunakan ID unik untuk terhubung dengan partner.</div>
+            </div>
+        </div>
 
-// Daftar nama file gambar yang disimpan di folder 'images/'
-const imageFilenames = [
-    'AESTETiC.jpg','ASTRONOT.jpg','AVATAR.jpg','BE-POSITIVE.jpg','BEACH.jpg','BT21.jpg',
-    'COFFEE.jpg','DORAEMON.jpg','FARM.jpg','FLOWER-NATURE.jpg','GAME.jpg','IDEAS=COFFEE.jpg',
-    'INDONESIA.jpg','ITSOK.jpg','KUCING LUTCU.jpg','LOVE.jpg','MEOW.jpg','MOOD-PANDA.jpg',
-    'MOTOR.jpg','NOTHINK.jpg','OCEANS.jpg','ONE-PICE.jpg','PANTAI.jpg','SAMURAI.jpg',
-    'SUCCES.jpg','SWEAT-CAT.jpg','TRAVELING.jpg','UNICORN.jpg','VW.jpg','H013.jpg',
-    'H014.jpg','H015.jpg','H016.jpg','H017.jpg','H021.jpg','H022.jpg','H023.jpg','H018.jpg','H019.jpg','H020.jpg'
-];
+        <!-- App Chat -->
+        <div id="chat-app">
+            <div class="chat-app-layout">
+                <!-- Sidebar -->
+                <div class="chat-sidebar">
+                    <div class="chat-sidebar-header">
+                        <div class="user">
+                            <div class="avatar" id="my-avatar">T</div>
+                            <div class="user-info">
+                                <div class="name" id="my-id">...</div>
+                                <div class="status">
+                                    <span class="dot" id="my-status-dot"></span>
+                                    <span id="my-status">Offline</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-sidebar-actions">
+                            <button class="btn-icon" onclick="refreshApp()" title="Refresh">⟳</button>
+                            <button class="btn-icon" onclick="logout()" title="Keluar" style="color:#ff6b6b;">✕</button>
+                        </div>
+                    </div>
 
-function openTab(mode) {
-    currentMode = mode;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.canvas-container').forEach(v => v.classList.remove('active'));
-    
-    const targetBtn = document.getElementById('btn-tab-' + mode);
-    if (targetBtn) targetBtn.classList.add('active');
+                    <!-- Connect area - FIXED: lebih kompak & jelas -->
+                    <div class="chat-connect-area">
+                        <input type="text" id="target-id" class="input" placeholder="ID partner...">
+                        <button class="btn" onclick="connectPeer()">Hubung</button>
+                    </div>
 
-    document.getElementById('tab-' + mode).classList.add('active');
-    
-    // Canvas resi tetap ditampilkan sebagai peninjau jika membuka tab histori
-    if (mode === 'history') {
-        document.getElementById('canvas-resi').classList.add('active');
-        document.getElementById('mainTitle').innerText = 'HISTORI CETAK RESI';
-        renderPrintHistory();
-    } else {
-        document.getElementById('canvas-' + mode).classList.add('active');
-        document.getElementById('mainTitle').innerText = mode === 'resi' ? 'STUDIO CETAK RESI' : 'STUDIO CETAK IMAGE';
-    }
-    updateUI();
-}
+                    <div class="chat-peer-list-container" id="peer-list-container">
+                        <div class="label">Koneksi</div>
+                        <div id="peer-list">
+                            <div class="chat-peer-empty">— belum ada koneksi —</div>
+                        </div>
+                    </div>
 
-// ========== PERBAIKAN: MUAT ULANG GAMBAR DARI FOLDER images/ ==========
-function loadAssets() {
-    const grid = document.getElementById('assetGrid');
-    grid.innerHTML = '<div style="grid-column:span 2; text-align:center; color:white">Memuat gambar...</div>';
-    
-    // Buat ulang assetList dengan path ke folder images
-    assetList = imageFilenames.map(name => ({
-        id: Math.random(),
-        name: name,
-        dataUrl: 'images/' + name   // path relatif ke folder images
-    }));
-    
-    // Render ulang grid
-    renderAssets();
-}
+                    <div class="chat-sidebar-footer">
+                        <button class="btn" onclick="changeId()">🔄 Ganti ID</button>
+                        <button class="btn" onclick="refreshApp()">⟳ Refresh</button>
+                        <button class="btn danger" onclick="logout()">🚪 Keluar</button>
+                    </div>
+                </div>
 
-function renderAssets() {
-    const grid = document.getElementById('assetGrid');
-    grid.innerHTML = '';
-    if (assetList.length === 0) {
-        grid.innerHTML = '<div style="grid-column:span 2; text-align:center; color:white">Tidak ada gambar. Tekan MUAT.</div>';
-        return;
-    }
-    assetList.forEach((asset, idx) => {
-        const div = document.createElement('div');
-        div.className = 'asset-item';
-        // Gunakan dataUrl sebagai src
-        div.innerHTML = `<img src="${asset.dataUrl}" loading="lazy" onclick="addToCanvasImg(${idx})" onerror="this.style.display='none'"><div class="name">${asset.name}</div><button class="rotate-btn" onclick="rotateAsset(${idx})">↻</button>`;
-        grid.appendChild(div);
-    });
-}
+                <!-- Main Chat -->
+                <div class="chat-main">
+                    <div class="chat-header">
+                        <div class="left">
+                            <div class="avatar">📡</div>
+                            <div class="info">
+                                <div class="name">Semua Partner</div>
+                                <div class="sub" id="peer-count">0 terhubung</div>
+                            </div>
+                        </div>
+                        <div class="right">
+                            <span style="font-size:0.6rem;color:var(--text-secondary);" id="msg-count">0</span>
+                            <button class="btn-icon print-resi" onclick="sendAllToCetak('resi')" title="Cetak semua gambar sebagai Resi">🖨️</button>
+                            <button class="btn-icon print-gambar" onclick="sendAllToCetak('gambar')" title="Cetak semua gambar sebagai Gambar">🖼️</button>
+                            <button class="btn-icon" onclick="clearTimeline()" title="Hapus semua pesan">🗑</button>
+                        </div>
+                    </div>
 
-async function rotateAsset(idx) {
-    const img = new Image(); 
-    img.src = assetList[idx].dataUrl; 
-    await img.decode().catch(() => {});
-    // Jika gambar gagal dimuat, skip
-    if (!img.width || !img.height) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = img.height; canvas.height = img.width;
-    const ctx = canvas.getContext('2d');
-    ctx.translate(canvas.width/2, canvas.height/2);
-    ctx.rotate(90 * Math.PI / 180);
-    ctx.drawImage(img, -img.width/2, -img.height/2);
-    assetList[idx].dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    renderAssets();
-}
+                    <div class="chat-messages" id="stream-area">
+                        <div class="empty-state" id="empty-state">
+                            📭 Belum ada data. Hubungkan ke partner dan kirim data dari bawah.
+                        </div>
+                    </div>
 
-function getPaperDim() {
-    const val = document.getElementById('paperType').value;
-    if (val === 'custom') return [parseInt(document.getElementById('custW').value), parseInt(document.getElementById('custH').value)];
-    return PAPER_SIZES[val];
-}
+                    <!-- Input -->
+                    <div class="chat-input">
+                        <div class="job-list" id="job-list"></div>
 
-function addToCanvasImg(idx) {
-    if (!assetList[idx]) return;
-    imageData.push({
-        id: Date.now() + Math.random(),
-        src: assetList[idx].dataUrl,
-        w: parseInt(document.getElementById('imgW').value),
-        h: parseInt(document.getElementById('imgH').value),
-        gap: 0
-    });
-    updateUI();
-}
+                        <div class="input-actions">
+                            <button class="btn btn-outline" onclick="addJob()">➕ Tambah</button>
+                            <button class="btn btn-outline" onclick="document.getElementById('file-input').click()">📎 File</button>
+                            <button class="btn btn-primary" onclick="sendData()">⚡ Kirim</button>
+                            <input type="file" id="file-input" multiple hidden onchange="handleFileSelect(this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-function deleteItem(id) {
-    if (currentMode === 'resi') resiData = resiData.filter(i => i.id !== id);
-    else imageData = imageData.filter(i => i.id !== id);
-    updateUI();
-}
+    <!-- ===== MODUL CETAK ===== -->
+    <div id="module-cetak">
+        <!-- Header -->
+        <header class="cetak-header no-print">
+            <h1 id="cetak-title">STUDIO CETAK RESI</h1>
+            <div class="cetak-controls">
+                <div class="paper-select">
+                    <span>KERTAS:</span>
+                    <select id="paperType">
+                        <option value="A4">A4 (210x297mm)</option>
+                        <option value="A3">A3 (297x420mm)</option>
+                        <option value="A3+">A3+ (329x483mm)</option>
+                        <option value="custom">Karso</option>
+                    </select>
+                    <span id="customDim" style="display: none;">
+                        <input type="number" id="custW" value="210" style="width:50px"> x
+                        <input type="number" id="custH" value="297" style="width:50px"> mm
+                    </span>
+                </div>
+                <button class="print-btn" onclick="window.print()">CETAK</button>
+            </div>
+        </header>
 
-function clearCanvas() {
-    if (!confirm("Hapus kabeh?")) return;
-    if (currentMode === 'resi') resiData = [];
-    else imageData = [];
-    updateUI();
-}
+        <div class="cetak-main">
+            <aside class="cetak-sidebar no-print">
+                <nav class="cetak-tab-nav">
+                    <button class="cetak-tab-btn active" onclick="openCetakTab('resi')">
+                        NYETAK RESI <span id="resiBadge" class="badge" style="background:#ef4444;color:white;border-radius:50%;padding:0 8px;font-size:9px;">0</span>
+                    </button>
+                    <button class="cetak-tab-btn" onclick="openCetakTab('image')">NYETAK GAMBAR</button>
+                    <button class="cetak-tab-btn" onclick="openCetakTab('history')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        HISTORI
+                    </button>
+                </nav>
 
-function addResi(src) {
-    const exists = resiData.some(item => item.src === src);
-    if (exists) { alert('⚠️ Resi ini sudah ada di canvas!'); return false; }
-    resiData.push({ id: Date.now() + Math.random(), src });
-    updateUI();
-    return true;
-}
+                <!-- Tab Resi -->
+                <div id="cetak-tab-resi" class="cetak-tab-content active">
+                    <div class="cetak-sidebar-scroll">
+                        <div class="slider-group">
+                            <label>Lebar Resi (mm)</label>
+                            <div class="numeric-input">
+                                <input type="range" id="resiWidthRange" min="20" max="210" value="100">
+                                <input type="number" id="resiWidthNum" value="100">
+                            </div>
+                        </div>
+                        <div class="slider-group">
+                            <label>Tinggi Resi (mm)</label>
+                            <div class="numeric-input">
+                                <input type="range" id="resiHeightRange" min="20" max="297" value="150">
+                                <input type="number" id="resiHeightNum" value="150">
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <div>Kapasitas/Hal: <span id="resiCapacity">0</span></div>
+                            <div>Total Item: <span id="resiTotal">0</span></div>
+                        </div>
+                        <br>
+                        <button class="btn-blue" style="width:100%" onclick="document.getElementById('pdfInp').click()">+ UPLOAD PDF RESI</button>
+                        <input type="file" id="pdfInp" multiple accept="application/pdf" style="display:none">
+                        <div id="resiHistory" class="history-list"></div>
+                    </div>
+                </div>
 
-// Tambahkan updateBadge agar sinkron dengan data resi
-function updateBadge() { 
-    document.getElementById('resiBadge').innerText = resiData.length; 
-}
+                <!-- Tab Image -->
+                <div id="cetak-tab-image" class="cetak-tab-content">
+                    <div class="cetak-sidebar-scroll">
+                        <div class="slider-group">
+                            <label>Upload Gambar Sendiri</label>
+                            <div class="upload-area" id="uploadArea" onclick="document.getElementById('imgUpload').click()">
+                                <div class="icon">📁</div>
+                                <p style="font-size:11px;">Klik atau tarik gambar ke sini</p>
+                                <p style="font-size:9px; color:#64748b;">JPG, PNG, WEBP (max 10MB)</p>
+                            </div>
+                            <input type="file" id="imgUpload" multiple accept="image/*" style="display:none">
+                            <div id="uploadPreview" class="upload-preview-list"></div>
+                        </div>
 
-function updateUI() {
-    updateBadge();
-    if (currentMode === 'resi' || currentMode === 'history') renderResi();
-    if (currentMode === 'image') renderImgMode();
-}
+                        <div class="slider-group">
+                            <label>Ukuran (W x H mm)</label>
+                            <div class="numeric-input">
+                                <input type="number" id="imgW" value="50">
+                                <span>x</span>
+                                <input type="number" id="imgH" value="50">
+                            </div>
+                        </div>
+                        <div class="slider-group">
+                            <label>Jarak / Gap (mm) — hanya tampilan, saat print dihilangkan</label>
+                            <div class="numeric-input">
+                                <input type="number" id="imgGap" value="0" min="0">
+                            </div>
+                        </div>
 
-function renderResi() {
-    const container = document.getElementById('canvas-resi');
-    container.innerHTML = '';
-    const [pW, pH] = getPaperDim();
-    const rW = parseInt(document.getElementById('resiWidthNum').value);
-    const rH = parseInt(document.getElementById('resiHeightNum').value);
-    const cols = Math.floor(pW / rW) || 1;
-    const rows = Math.floor(pH / rH) || 1;
-    const perPage = cols * rows;
-    const totalPages = Math.ceil(resiData.length / perPage) || 0;
+                        <div class="slider-group">
+                            <label>Panjang Kres (mm)</label>
+                            <div class="numeric-input">
+                                <input type="range" id="cropLen" min="2" max="15" value="5" step="0.5">
+                                <input type="number" id="cropLenNum" value="5" step="0.5">
+                            </div>
+                        </div>
+                        <div class="slider-group">
+                            <label>Tebal Kres (mm)</label>
+                            <div class="numeric-input">
+                                <input type="range" id="cropThick" min="0.1" max="1" value="0.2" step="0.05">
+                                <input type="number" id="cropThickNum" value="0.2" step="0.05">
+                            </div>
+                        </div>
+                        <div class="slider-group">
+                            <label>Offset Kres (mm) — jarak dari sudut</label>
+                            <div class="numeric-input">
+                                <input type="range" id="cropOffset" min="0" max="5" value="0" step="0.5">
+                                <input type="number" id="cropOffsetNum" value="0" step="0.5">
+                            </div>
+                        </div>
+                        <div class="slider-group">
+                            <label><input type="checkbox" id="showCrop" checked> Tampilkan Kres</label>
+                        </div>
 
-    document.getElementById('resiCapacity').innerText = perPage;
-    document.getElementById('resiTotal').innerText = resiData.length;
+                        <div class="asset-grid-title">
+                            TINGGAL MILIH
+                            <button class="btn-blue" style="padding:2px 8px; font-size:9px" onclick="loadAssets()">MUAT</button>
+                        </div>
+                        <div id="assetGrid" class="asset-grid"></div>
 
-    for (let i = 0; i < totalPages; i++) {
-        const page = createPageEl(pW, pH, i + 1);
-        page.style.display = 'flex';
-        page.style.flexWrap = 'wrap';
-        page.style.alignContent = 'flex-start';
-        page.style.justifyContent = 'flex-start';
-        page.style.alignItems = 'flex-start';
-        page.style.padding = '0';
-        page.style.gap = '0';
+                        <!-- Gambar dari Chat -->
+                        <div class="asset-grid-title" style="margin-top:16px; border-top:2px solid #3b82f6;">
+                            📩 GAMBAR DARI CHAT
+                            <span id="chatImageCount" style="font-size:9px;color:#94a3b8;">0</span>
+                        </div>
+                        <div id="chatImagesContainer" class="chat-images-list">
+                            <div style="color:#94a3b8; font-size:10px; padding:8px 0;">Belum ada gambar dari chat.</div>
+                        </div>
+                    </div>
+                </div>
 
-        resiData.slice(i * perPage, (i + 1) * perPage).forEach(item => {
-            const slot = document.createElement('div');
-            slot.className = 'slot';
-            slot.style.width = rW + 'mm';
-            slot.style.height = rH + 'mm';
-            slot.style.flexShrink = '0';
-            slot.innerHTML = `<img src="${item.src}"><button class="delete-btn" onclick="deleteItem(${item.id})">×</button>`;
-            page.appendChild(slot);
-        });
-        container.appendChild(page);
-    }
-    document.getElementById('pageCounter').innerText = `Item: ${resiData.length} | Hal: ${totalPages}`;
-}
+                <!-- Tab History -->
+                <div id="cetak-tab-history" class="cetak-tab-content">
+                    <div class="cetak-sidebar-scroll">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #334155; padding-bottom: 6px;">
+                            <span style="font-size: 10px; font-weight: bold; color: #3b82f6; text-transform: uppercase;">LOG CETAK RESI</span>
+                            <button onclick="clearPrintHistory()" style="background: #ef4444; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 8px; font-weight: bold; cursor: pointer;">HAPUS SEMUA</button>
+                        </div>
+                        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="font-size: 9px; color: #94a3b8; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 12px;">📅</span> TOTAL RESI HARI INI
+                            </div>
+                            <span id="totalResiToday" style="font-size: 18px; font-weight: 900; color: #10b981;">0</span>
+                        </div>
+                        <div id="historyLogList"></div>
+                    </div>
+                </div>
+            </aside>
 
-function renderImgMode() {
-    const container = document.getElementById('canvas-image');
-    container.innerHTML = '';
-    const [pW, pH] = getPaperDim();
-    if (imageData.length === 0) {
-        document.getElementById('pageCounter').innerText = "Item: 0 | Hal: 0";
-        return;
-    }
+            <main class="cetak-content">
+                <div class="cetak-toolbar no-print">
+                    <button class="btn-red" onclick="clearCanvas()">RESET LAYAR</button>
+                    <span id="pageCounter" style="color:white; font-size:11px; margin-left:auto">Item: 0 | Halaman: 0</span>
+                </div>
+                <div id="canvas-resi" class="canvas-container active"></div>
+                <div id="canvas-image" class="canvas-container"></div>
+            </main>
+        </div>
+    </div>
 
-    const cropLen = parseFloat(document.getElementById('cropLenNum').value) || 5;
-    const cropThick = parseFloat(document.getElementById('cropThickNum').value) || 0.2;
-    const cropOffset = parseFloat(document.getElementById('cropOffsetNum').value) || 0;
-    const showCrop = document.getElementById('showCrop').checked;
-    const gapVal = parseFloat(document.getElementById('imgGap').value) || 0;
+    <!-- ============================================================ -->
+    <!-- JAVASCRIPT GABUNGAN -->
+    <script>
+        // ============================================================
+        //  SHARED STATE
+        // ============================================================
+        let sharedImages = []; // array {id, src, name, from, timestamp}
 
-    let pCount = 1;
-    let currentPage = createPageEl(pW, pH, pCount);
-    currentPage.style.position = 'relative';
-    currentPage.style.padding = '0';
-    container.appendChild(currentPage);
-
-    let curX = 0, curY = 0, rowH = 0;
-    let sX = 0, sY = 0, sRowH = 0;
-
-    imageData.forEach(item => {
-        if (curX + item.w > pW) {
-            curX = 0;
-            curY += rowH;
-            rowH = 0;
+        // ============================================================
+        //  MODUL CHAT (dari deep9) - dengan penyesuaian
+        // ============================================================
+        let chat_myId = localStorage.getItem('tfl_id');
+        if (!chat_myId) {
+            chat_myId = 'TFL-' + Math.floor(Math.random() * 9000 + 1000);
+            localStorage.setItem('tfl_id', chat_myId);
         }
-        
-        if (curY + item.h > pH) {
-            pCount++;
-            currentPage = createPageEl(pW, pH, pCount);
+
+        let peer = null;
+        let conns = [];
+        let jobs = [{ files: [], inv: '', ket: '' }];
+        let activeJobIdx = 0;
+        let messageHistory = [];
+        let msgIdCounter = 0;
+
+        // ===== Audio =====
+        function playBeep(freq, duration, type) {
+            try {
+                const ctx = new(window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.value = freq || 800;
+                gain.gain.value = 0.2;
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (duration || 200) / 1000);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + (duration || 200) / 1000);
+            } catch (_) {}
+        }
+
+        function playSound(id) {
+            if (id === 'notif-sound') {
+                playBeep(880, 180);
+                setTimeout(() => playBeep(1100, 120), 200);
+            } else if (id === 'conn-sound') {
+                playBeep(660, 150);
+                setTimeout(() => playBeep(880, 150), 180);
+            } else if (id === 'done-sound') {
+                playBeep(1000, 130);
+                setTimeout(() => playBeep(800, 130), 160);
+                setTimeout(() => playBeep(600, 150), 320);
+            }
+        }
+
+        // ===== Login =====
+        function doLogin() {
+            const name = document.getElementById('login-name').value.trim();
+            if (name) {
+                chat_myId = name.replace(/\s+/g, '-');
+                localStorage.setItem('tfl_id', chat_myId);
+            }
+            document.getElementById('chat-login-screen').classList.add('hidden');
+            document.getElementById('chat-app').classList.add('active');
+            document.getElementById('my-id').innerText = chat_myId;
+            document.getElementById('my-avatar').innerText = chat_myId.charAt(0).toUpperCase();
+            initPeer();
+            renderJobs();
+            renderMessageHistory();
+            updatePeerList();
+            const saved = sessionStorage.getItem('tfl_jobs');
+            if (saved) {
+                try { const parsed = JSON.parse(saved); if (parsed.length) jobs = parsed;
+                    renderJobs(); } catch (_) {}
+            }
+            reconnectSavedPeers();
+        }
+        (function autoLogin() {
+            const stored = localStorage.getItem('tfl_id');
+            if (stored) {
+                document.getElementById('login-name').value = stored;
+                setTimeout(doLogin, 100);
+            }
+        })();
+
+        function logout() {
+            if (peer) peer.destroy();
+            localStorage.removeItem('tfl_id');
+            localStorage.removeItem('tfl_peers');
+            sessionStorage.removeItem('tfl_jobs');
+            location.reload();
+        }
+
+        function refreshApp() {
+            sessionStorage.setItem('tfl_jobs', JSON.stringify(jobs));
+            const peerIds = conns.map(c => c.peer);
+            localStorage.setItem('tfl_peers', JSON.stringify(peerIds));
+            if (peer) { peer.destroy();
+                conns.forEach(c => c.close());
+                conns = []; }
+            initPeer();
+            showToast('🔄 Refresh, menyambung ulang...');
+        }
+
+        // ===== Ganti ID dengan password =====
+        function changeId() {
+            const password = prompt("Masukkan password untuk mengganti ID:");
+            if (password !== "gantisaja") {
+                alert("Password salah!");
+                return;
+            }
+            const newId = prompt("Masukkan ID baru:");
+            if (!newId) return;
+            if (newId === chat_myId) {
+                alert("ID sama dengan yang sekarang.");
+                return;
+            }
+            if (peer) peer.destroy();
+            localStorage.setItem('tfl_id', newId);
+            chat_myId = newId;
+            conns = [];
+            messageHistory = [];
+            document.getElementById('my-id').innerText = chat_myId;
+            document.getElementById('my-avatar').innerText = chat_myId.charAt(0).toUpperCase();
+            initPeer();
+            showToast('✅ ID diubah menjadi: ' + chat_myId);
+        }
+
+        // ===== PeerJS =====
+        function initPeer() {
+            if (peer) { peer.destroy();
+                conns.forEach(c => c.close());
+                conns = []; }
+            peer = new Peer(chat_myId, { debug: 1 });
+
+            peer.on('open', () => {
+                updateStatus('ready');
+                showToast('✅ Siap! ID: ' + chat_myId);
+                reconnectSavedPeers();
+            });
+
+            peer.on('connection', conn => setupConn(conn));
+
+            peer.on('error', err => {
+                console.error(err);
+                if (err.type === 'peer-unavailable') showToast('❌ Partner tidak ditemukan!', 'error');
+                updateStatus('error');
+            });
+
+            peer.on('disconnected', () => {
+                updateStatus('offline');
+                setTimeout(() => { if (peer && !peer.destroyed) peer.reconnect(); }, 2000);
+            });
+        }
+
+        function reconnectSavedPeers() {
+            const saved = localStorage.getItem('tfl_peers');
+            if (!saved) return;
+            try {
+                const peers = JSON.parse(saved);
+                peers.forEach(pid => {
+                    if (pid !== chat_myId && !conns.find(c => c.peer === pid)) {
+                        const conn = peer.connect(pid, { reliable: true });
+                        setupConn(conn);
+                    }
+                });
+                localStorage.removeItem('tfl_peers');
+            } catch (_) {}
+        }
+
+        function connectPeer() {
+            const tid = document.getElementById('target-id').value.trim();
+            if (!tid || tid === chat_myId) return showToast('⚠️ ID tidak valid', 'error');
+            if (conns.find(c => c.peer === tid)) return showToast('⚠️ Sudah terhubung', 'error');
+
+            updateStatus('connecting');
+            const conn = peer.connect(tid, { reliable: true });
+            setupConn(conn);
+            document.getElementById('target-id').value = '';
+            savePeerList();
+        }
+
+        function setupConn(conn) {
+            conn.on('open', () => {
+                if (!conns.find(c => c.peer === conn.peer)) {
+                    conns.push(conn);
+                    updatePeerList();
+                    playSound('conn-sound');
+                    showToast('⚡ Terhubung: ' + conn.peer);
+                    savePeerList();
+                }
+            });
+
+            conn.on('data', data => {
+                console.log('📩 Data dari', conn.peer, data);
+                handleData(data, conn.peer);
+            });
+
+            conn.on('close', () => {
+                conns = conns.filter(c => c.peer !== conn.peer);
+                updatePeerList();
+                savePeerList();
+                showToast('🔌 Terputus: ' + conn.peer, 'error');
+            });
+
+            conn.on('error', () => {
+                conns = conns.filter(c => c.peer !== conn.peer);
+                updatePeerList();
+                savePeerList();
+            });
+        }
+
+        function savePeerList() {
+            const ids = conns.map(c => c.peer);
+            localStorage.setItem('tfl_peers', JSON.stringify(ids));
+        }
+
+        function updateStatus(s) {
+            const dot = document.getElementById('my-status-dot');
+            const txt = document.getElementById('my-status');
+            dot.className = 'dot' + (s === 'ready' || s === 'connected' ? ' online' : '');
+            txt.innerText = s.toUpperCase();
+        }
+
+        function updatePeerList() {
+            const list = document.getElementById('peer-list');
+            const countEl = document.getElementById('peer-count');
+            if (!conns.length) {
+                list.innerHTML = '<div class="chat-peer-empty">— belum ada koneksi —</div>';
+                if (countEl) countEl.innerText = '0 terhubung';
+                updateStatus('ready');
+                return;
+            }
+            list.innerHTML = conns.map(c => `
+                    <div class="chat-peer-item">
+                        <div class="avatar">${c.peer.charAt(0).toUpperCase()}</div>
+                        <div class="info">
+                            <div class="name">${c.peer}</div>
+                            <div class="status-text">Terhubung</div>
+                        </div>
+                        <span class="online-dot"></span>
+                        <button class="remove-btn" onclick="disconnectPeer('${c.peer}')">✕</button>
+                    </div>
+                `).join('');
+            if (countEl) countEl.innerText = conns.length + ' terhubung';
+            updateStatus('connected');
+        }
+
+        function disconnectPeer(pid) {
+            const c = conns.find(x => x.peer === pid);
+            if (c) c.close();
+            savePeerList();
+        }
+
+        function getConnectedPeers() {
+            return conns.filter(c => c.open).map(c => c.peer);
+        }
+
+        // ===== JOBS =====
+        function addJob() {
+            jobs.push({ files: [], inv: '', ket: '' });
+            activeJobIdx = jobs.length - 1;
+            renderJobs();
+            sessionStorage.setItem('tfl_jobs', JSON.stringify(jobs));
+        }
+
+        function removeJob(idx) {
+            if (jobs.length > 1) {
+                jobs.splice(idx, 1);
+                if (activeJobIdx >= jobs.length) activeJobIdx = jobs.length - 1;
+                renderJobs();
+                sessionStorage.setItem('tfl_jobs', JSON.stringify(jobs));
+            } else {
+                showToast('⚠️ Minimal satu baris!', 'error');
+            }
+        }
+
+        function triggerFileSelect(idx) {
+            activeJobIdx = idx;
+            document.getElementById('file-input').click();
+        }
+
+        async function handleFileSelect(input) {
+            if (!input.files.length || activeJobIdx === null || activeJobIdx >= jobs.length) return;
+            const MAX_SIZE = 1 * 1024 * 1024; // 1 MB
+            for (const file of input.files) {
+                if (file.size > MAX_SIZE) {
+                    showToast(`⚠️ "${file.name}" > 1 MB`, 'error');
+                    continue;
+                }
+                try {
+                    const data = await toBase64(file);
+                    jobs[activeJobIdx].files.push({ data: data, name: file.name, type: file.type });
+                } catch (e) { console.error('File read error', e); }
+            }
+            renderJobs();
+            sessionStorage.setItem('tfl_jobs', JSON.stringify(jobs));
+            input.value = '';
+        }
+
+        function removeFile(jIdx, fIdx) {
+            if (jobs[jIdx] && jobs[jIdx].files) {
+                jobs[jIdx].files.splice(fIdx, 1);
+                renderJobs();
+                sessionStorage.setItem('tfl_jobs', JSON.stringify(jobs));
+            }
+        }
+
+        function renderJobs() {
+            const list = document.getElementById('job-list');
+            list.innerHTML = '';
+            jobs.forEach((job, idx) => {
+                const row = document.createElement('div');
+                row.className = 'job-row';
+                const thumbs = job.files.map((f, fIdx) => `
+                        <div class="thumb-box">
+                            <img src="${f.data}" onerror="this.style.display='none'; this.parentElement.style.background='#eee';">
+                            <div class="del" onclick="removeFile(${idx}, ${fIdx})">×</div>
+                        </div>
+                    `).join('');
+                row.innerHTML = `
+                        <div class="top">
+                            <span class="label">BARIS ${idx+1}</span>
+                            <button class="remove-job" onclick="removeJob(${idx})">🗑</button>
+                        </div>
+                        <div class="thumb-row">
+                            ${thumbs}
+                            <div class="add-thumb" onclick="triggerFileSelect(${idx})">+</div>
+                        </div>
+                        <input type="text" class="input" placeholder="No. Invoice (INV)" value="${escapeHtml(job.inv)}" 
+                            oninput="jobs[${idx}].inv = this.value; sessionStorage.setItem('tfl_jobs', JSON.stringify(jobs));">
+                        <textarea class="input" placeholder="Keterangan..." rows="1"
+                            oninput="jobs[${idx}].ket = this.value; sessionStorage.setItem('tfl_jobs', JSON.stringify(jobs));">${escapeHtml(job.ket)}</textarea>
+                    `;
+                list.appendChild(row);
+            });
+        }
+
+        // ===== SEND DATA =====
+        function sendData() {
+            if (!conns.length) {
+                showToast('⚠️ Hubungkan partner dulu!', 'error');
+                return;
+            }
+            const hasContent = jobs.some(j => j.inv.trim() || j.ket.trim() || j.files.length > 0);
+            if (!hasContent) {
+                showToast('⚠️ Data masih kosong!', 'error');
+                return;
+            }
+
+            let totalSize = 0;
+            jobs.forEach(j => { j.files.forEach(f => { const size = (f.data.length * 3) / 4;
+                    totalSize += size; }); });
+            if (totalSize > 5 * 1024 * 1024) {
+                if (!confirm(`Total ukuran file ~${(totalSize/1024/1024).toFixed(1)} MB. Yakin kirim?`)) return;
+            }
+
+            const jobsClone = JSON.parse(JSON.stringify(jobs));
+            const payload = {
+                type: 'data',
+                jobs: jobsClone,
+                id: Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+                sender: chat_myId,
+                time: now(),
+                timestamp: Date.now()
+            };
+
+            let sentCount = 0;
+            conns.forEach(c => {
+                if (c.open) {
+                    try { c.send(payload);
+                        sentCount++; } catch (e) { console.error('Send error to', c.peer, e);
+                        showToast(`❌ Gagal kirim ke ${c.peer}`, 'error'); }
+                }
+            });
+
+            if (sentCount === 0) {
+                showToast('❌ Gagal mengirim. Koneksi belum siap.', 'error');
+                return;
+            }
+
+            playSound('done-sound');
+            addMessageToHistory({
+                type: 'out',
+                sender: chat_myId,
+                jobs: jobsClone,
+                time: payload.time,
+                id: payload.id,
+                timestamp: payload.timestamp,
+                resent: false,
+                forwarded: false
+            });
+
+            jobsClone.forEach(job => {
+                if (job.files) {
+                    job.files.forEach(file => {
+                        if (file.type && file.type.startsWith('image/')) {
+                            sharedImages.push({
+                                id: Date.now() + Math.random(),
+                                src: file.data,
+                                name: file.name,
+                                from: 'Anda',
+                                timestamp: Date.now()
+                            });
+                        }
+                    });
+                }
+            });
+
+            jobs = [{ files: [], inv: '', ket: '' }];
+            activeJobIdx = 0;
+            renderJobs();
+            sessionStorage.setItem('tfl_jobs', JSON.stringify(jobs));
+            showToast('📤 Data terkirim ke ' + sentCount + ' partner');
+            updateChatImagesUI();
+        }
+
+        // ===== RECEIVE DATA =====
+        function handleData(data, from) {
+            if (data && data.type === 'data' && data.jobs) {
+                playSound('notif-sound');
+                addMessageToHistory({
+                    type: 'in',
+                    sender: from,
+                    jobs: data.jobs,
+                    time: data.time || now(),
+                    id: data.id || Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+                    timestamp: data.timestamp || Date.now(),
+                    resent: data.resent || false,
+                    forwarded: data.forwarded || false,
+                    originalSender: data.originalSender || null
+                });
+
+                data.jobs.forEach(job => {
+                    if (job.files) {
+                        job.files.forEach(file => {
+                            if (file.type && file.type.startsWith('image/')) {
+                                sharedImages.push({
+                                    id: Date.now() + Math.random(),
+                                    src: file.data,
+                                    name: file.name,
+                                    from: from,
+                                    timestamp: Date.now()
+                                });
+                            }
+                        });
+                    }
+                });
+                updateChatImagesUI();
+            }
+        }
+
+        // ===== MESSAGE HISTORY =====
+        function addMessageToHistory(msg) {
+            const entry = { ...msg, _uid: ++msgIdCounter };
+            messageHistory.push(entry);
+            renderMessageHistory();
+        }
+
+        function renderMessageHistory() {
+            const area = document.getElementById('stream-area');
+            const empty = document.getElementById('empty-state');
+            if (empty) empty.remove();
+
+            const children = area.children;
+            for (let i = children.length - 1; i >= 0; i--) {
+                if (children[i].id === 'empty-state') continue;
+                area.removeChild(children[i]);
+            }
+
+            if (!messageHistory.length) {
+                const el = document.createElement('div');
+                el.className = 'empty-state';
+                el.id = 'empty-state';
+                el.textContent = '📭 Belum ada data. Hubungkan ke partner dan kirim data dari bawah.';
+                area.appendChild(el);
+                document.getElementById('msg-count').textContent = '0';
+                return;
+            }
+
+            document.getElementById('msg-count').textContent = messageHistory.length;
+
+            const sorted = [...messageHistory].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+            sorted.forEach(msg => {
+                const card = createMessageCard(msg);
+                area.appendChild(card);
+            });
+
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function createMessageCard(msg) {
+            const card = document.createElement('div');
+            card.className = `msg-card ${msg.type}`;
+
+            let bodyHtml = '';
+            if (msg.jobs && msg.jobs.length) {
+                msg.jobs.forEach(job => {
+                    bodyHtml += `<div style="margin-bottom:4px;">`;
+                    if (job.inv) bodyHtml +=
+                        `<div style="font-weight:700;color:var(--whatsapp-dark);margin-bottom:1px;">INV: ${escapeHtml(job.inv)}</div>`;
+                    if (job.ket) bodyHtml +=
+                        `<div style="color:#333;font-size:0.75rem;margin-bottom:2px;">${escapeHtml(job.ket).replace(/\n/g,'<br>')}</div>`;
+                    if (job.files && job.files.length) {
+                        job.files.forEach(f => {
+                            if (f.type && f.type.startsWith('image/')) {
+                                bodyHtml +=
+                                    `<img src="${f.data}" style="max-width:100%;border-radius:6px;margin-top:4px;cursor:pointer;" onclick="downloadFile('${f.data}','${escapeHtml(f.name)}')">`;
+                            } else {
+                                bodyHtml +=
+                                    `<div class="file-box" onclick="downloadFile('${f.data}','${escapeHtml(f.name)}')"><span style="font-size:1.1rem;">📄</span><div><div style="font-weight:600;font-size:0.7rem;">${escapeHtml(f.name)}</div><div style="font-size:0.55rem;color:var(--text-secondary);">Klik unduh</div></div></div>`;
+                            }
+                        });
+                    }
+                    bodyHtml += `</div>`;
+                });
+            }
+
+            let badges = '';
+            if (msg.resent) badges += `<span class="badge">↻ Ulang</span>`;
+            if (msg.forwarded) badges += `<span class="badge">📤 Forward</span>`;
+            if (msg.originalSender && msg.originalSender !== msg.sender) {
+                badges += `<span class="badge">dari ${msg.originalSender}</span>`;
+            }
+
+            const senderLabel = msg.type === 'out' ? 'Anda' : msg.sender;
+
+            card.innerHTML = `
+                    <div class="msg-header">
+                        <span class="sender">${senderLabel}</span>
+                        <span style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+                            ${badges}
+                            <span>${msg.time}</span>
+                        </span>
+                    </div>
+                    <div class="msg-body">${bodyHtml}</div>
+                    <div class="msg-footer">
+                        <span>${msg.type === 'out' ? 'Terkirim' : 'Diterima'}</span>
+                        <div class="actions">
+                            <button class="btn-mini primary" onclick="resendMessage(${msg._uid})">↻ Kirim Ulang</button>
+                            <button class="btn-mini success" onclick="toggleForwardMenu(${msg._uid})">📤 Forward</button>
+                            <div class="forward-dropdown" id="fwd-menu-${msg._uid}">
+                                <div class="menu" id="fwd-list-${msg._uid}"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            const menu = card.querySelector(`#fwd-list-${msg._uid}`);
+            if (menu) {
+                const peers = getConnectedPeers();
+                if (peers.length) {
+                    menu.innerHTML = peers.map(p =>
+                        `<div class="menu-item" onclick="forwardMessage(${msg._uid},'${p}')">📤 ${p}</div>`).join('');
+                } else {
+                    menu.innerHTML = `<div class="menu-item" style="color:var(--text-secondary);">Tidak ada partner</div>`;
+                }
+            }
+
+            return card;
+        }
+
+        // ===== RESEND & FORWARD =====
+        function resendMessage(uid) {
+            const msg = messageHistory.find(m => m._uid === uid);
+            if (!msg) return showToast('⚠️ Pesan tidak ditemukan', 'error');
+            if (!conns.length) return showToast('⚠️ Tidak ada partner terhubung', 'error');
+
+            const payload = {
+                type: 'data',
+                jobs: JSON.parse(JSON.stringify(msg.jobs)),
+                id: Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+                sender: chat_myId,
+                time: now(),
+                timestamp: Date.now(),
+                resent: true,
+                originalId: msg.id || msg._uid
+            };
+
+            let sentCount = 0;
+            conns.forEach(c => {
+                if (c.open) {
+                    try { c.send(payload);
+                        sentCount++; } catch (e) { console.error(e); }
+                }
+            });
+            if (sentCount === 0) return showToast('❌ Gagal kirim ulang', 'error');
+
+            playSound('done-sound');
+            showToast('↻ Dikirim ulang ke ' + sentCount + ' partner');
+            const copy = { ...msg, type: 'out', sender: chat_myId, time: now(), timestamp: Date.now(), id: payload.id,
+                resent: true, forwarded: false, _uid: ++msgIdCounter };
+            messageHistory.push(copy);
+            renderMessageHistory();
+        }
+
+        function toggleForwardMenu(uid) {
+            const menu = document.getElementById(`fwd-list-${uid}`);
+            if (!menu) return;
+            const isOpen = menu.classList.contains('open');
+            document.querySelectorAll('.forward-dropdown .menu.open').forEach(m => m.classList.remove('open'));
+            if (!isOpen) {
+                const peers = getConnectedPeers();
+                if (peers.length) {
+                    menu.innerHTML = peers.map(p =>
+                        `<div class="menu-item" onclick="forwardMessage(${uid},'${p}')">📤 ${p}</div>`).join('');
+                } else {
+                    menu.innerHTML = `<div class="menu-item" style="color:var(--text-secondary);">Tidak ada partner</div>`;
+                }
+                menu.classList.add('open');
+            }
+            setTimeout(() => {
+                document.addEventListener('click', function closeFwd(e) {
+                    if (!e.target.closest('.forward-dropdown')) {
+                        document.querySelectorAll('.forward-dropdown .menu.open').forEach(m => m.classList.remove(
+                        'open'));
+                        document.removeEventListener('click', closeFwd);
+                    }
+                });
+            }, 10);
+        }
+
+        function forwardMessage(uid, targetPeer) {
+            const msg = messageHistory.find(m => m._uid === uid);
+            if (!msg) return showToast('⚠️ Pesan tidak ditemukan', 'error');
+            const conn = conns.find(c => c.peer === targetPeer && c.open);
+            if (!conn) return showToast('❌ Koneksi ke ' + targetPeer + ' tidak aktif', 'error');
+
+            const payload = {
+                type: 'data',
+                jobs: JSON.parse(JSON.stringify(msg.jobs)),
+                id: Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+                sender: chat_myId,
+                time: now(),
+                timestamp: Date.now(),
+                forwarded: true,
+                originalSender: msg.sender || msg.originalSender || chat_myId,
+                originalId: msg.id || msg._uid
+            };
+
+            try {
+                conn.send(payload);
+                playSound('done-sound');
+                showToast('📤 Diteruskan ke ' + targetPeer);
+                const copy = { ...msg, type: 'out', sender: chat_myId, time: now(), timestamp: Date.now(), id: payload.id,
+                    resent: false, forwarded: true, originalSender: msg.sender || msg.originalSender || chat_myId,
+                    _uid: ++msgIdCounter };
+                messageHistory.push(copy);
+                renderMessageHistory();
+                document.querySelectorAll('.forward-dropdown .menu.open').forEach(m => m.classList.remove('open'));
+            } catch (e) {
+                showToast('❌ Gagal meneruskan', 'error');
+            }
+        }
+
+        // ===== SEND ALL IMAGES TO CETAK (dua mode) =====
+        function sendAllToCetak(mode) {
+            if (sharedImages.length === 0) {
+                showToast('Tidak ada gambar untuk dicetak.', 'error');
+                return;
+            }
+            if (mode === 'resi') {
+                sharedImages.forEach(img => {
+                    cetak_resiData.push({
+                        id: Date.now() + Math.random(),
+                        src: img.src
+                    });
+                });
+                switchModule('cetak');
+                openCetakTab('resi');
+                showToast('🖨️ ' + sharedImages.length + ' gambar dikirim ke cetak resi.');
+            } else {
+                const w = parseInt(document.getElementById('imgW').value) || 50;
+                const h = parseInt(document.getElementById('imgH').value) || 50;
+                sharedImages.forEach(img => {
+                    cetak_imageData.push({
+                        id: Date.now() + Math.random(),
+                        src: img.src,
+                        w: w,
+                        h: h,
+                        gap: 0
+                    });
+                });
+                switchModule('cetak');
+                openCetakTab('image');
+                showToast('🖼️ ' + sharedImages.length + ' gambar dikirim ke cetak gambar.');
+            }
+            updateCetakUI();
+        }
+
+        // ===== UTILITIES CHAT =====
+        function clearTimeline() {
+            if (messageHistory.length === 0) return;
+            if (!confirm('Hapus semua pesan?')) return;
+            messageHistory = [];
+            renderMessageHistory();
+            showToast('🗑️ Timeline dibersihkan');
+        }
+
+        function now() {
+            return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function downloadFile(data, name) {
+            const a = document.createElement('a');
+            a.href = data;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
+        }
+
+        function showToast(msg, type) {
+            const t = document.createElement('div');
+            t.className = 'toast ' + (type === 'error' ? 'error' : '');
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        // ============================================================
+        //  MODUL CETAK (dari RESI+LOG) - dengan penyesuaian
+        // ============================================================
+        let cetak_currentMode = 'resi';
+        let cetak_resiData = [];
+        let cetak_imageData = [];
+        let cetak_assetList = [];
+        let cetak_uploadedImages = [];
+        const PAPER_SIZES = { 'A4': [210, 297], 'A3': [297, 420], 'A3+': [329, 483] };
+        const imageFilenames = [
+            'AESTETiC.jpg', 'ASTRONOT.jpg', 'AVATAR.jpg', 'BE-POSITIVE.jpg', 'BEACH.jpg', 'BT21.jpg',
+            'COFFEE.jpg', 'DORAEMON.jpg', 'FARM.jpg', 'FLOWER-NATURE.jpg', 'GAME.jpg', 'IDEAS=COFFEE.jpg',
+            'INDONESIA.jpg', 'ITSOK.jpg', 'KUCING LUTCU.jpg', 'LOVE.jpg', 'MEOW.jpg', 'MOOD-PANDA.jpg',
+            'MOTOR.jpg', 'NOTHINK.jpg', 'OCEANS.jpg', 'ONE-PICE.jpg', 'PANTAI.jpg', 'SAMURAI.jpg',
+            'SUCCES.jpg', 'SWEAT-CAT.jpg', 'TRAVELING.jpg', 'UNICORN.jpg', 'VW.jpg', 'H013.jpg',
+            'H014.jpg', 'H015.jpg', 'H016.jpg', 'H017.jpg', 'H021.jpg', 'H022.jpg', 'H023.jpg', 'H018.jpg', 'H019.jpg',
+            'H020.jpg'
+        ];
+
+        // ===== Switch module =====
+        function switchModule(mod) {
+            document.querySelectorAll('#app-nav .tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + mod).classList.add('active');
+
+            document.getElementById('module-chat').classList.remove('active');
+            document.getElementById('module-cetak').classList.remove('active');
+            document.getElementById('module-' + mod).classList.add('active');
+
+            if (mod === 'cetak') {
+                updateCetakUI();
+                renderPrintHistory();
+                updateChatImagesUI();
+            }
+        }
+
+        // ===== Tab cetak =====
+        function openCetakTab(mode) {
+            cetak_currentMode = mode;
+            document.querySelectorAll('.cetak-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.cetak-tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.canvas-container').forEach(v => v.classList.remove('active'));
+
+            const targetBtn = document.querySelector(`.cetak-tab-btn[onclick*="${mode}"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+
+            document.getElementById('cetak-tab-' + mode).classList.add('active');
+            document.getElementById('canvas-' + (mode === 'resi' ? 'resi' : 'image')).classList.add('active');
+
+            document.getElementById('cetak-title').innerText = mode === 'resi' ? 'STUDIO CETAK RESI' : (mode === 'image' ?
+                'STUDIO CETAK IMAGE' : 'HISTORI CETAK RESI');
+
+            if (mode === 'history') renderPrintHistory();
+            updateCetakUI();
+        }
+
+        // ===== Update UI Cetak =====
+        function updateCetakUI() {
+            if (cetak_currentMode === 'resi' || cetak_currentMode === 'history') renderResi();
+            if (cetak_currentMode === 'image') renderImgMode();
+            updateBadge();
+            updateChatImagesUI();
+        }
+
+        function updateBadge() {
+            document.getElementById('resiBadge').innerText = cetak_resiData.length;
+        }
+
+        // ===== Fungsi Cetak =====
+        function getPaperDim() {
+            const val = document.getElementById('paperType').value;
+            if (val === 'custom') return [parseInt(document.getElementById('custW').value), parseInt(document.getElementById(
+                'custH').value)];
+            return PAPER_SIZES[val] || [210, 297];
+        }
+
+        function renderResi() {
+            const container = document.getElementById('canvas-resi');
+            container.innerHTML = '';
+            const [pW, pH] = getPaperDim();
+            const rW = parseInt(document.getElementById('resiWidthNum').value);
+            const rH = parseInt(document.getElementById('resiHeightNum').value);
+            const cols = Math.floor(pW / rW) || 1;
+            const rows = Math.floor(pH / rH) || 1;
+            const perPage = cols * rows;
+            const totalPages = Math.ceil(cetak_resiData.length / perPage) || 0;
+
+            document.getElementById('resiCapacity').innerText = perPage;
+            document.getElementById('resiTotal').innerText = cetak_resiData.length;
+
+            for (let i = 0; i < totalPages; i++) {
+                const page = createPageEl(pW, pH, i + 1);
+                page.style.display = 'flex';
+                page.style.flexWrap = 'wrap';
+                page.style.alignContent = 'flex-start';
+                page.style.justifyContent = 'flex-start';
+                page.style.alignItems = 'flex-start';
+                page.style.padding = '0';
+                page.style.gap = '0';
+
+                cetak_resiData.slice(i * perPage, (i + 1) * perPage).forEach(item => {
+                    const slot = document.createElement('div');
+                    slot.className = 'slot';
+                    slot.style.width = rW + 'mm';
+                    slot.style.height = rH + 'mm';
+                    slot.style.flexShrink = '0';
+                    slot.innerHTML = `<img src="${item.src}"><button class="delete-btn" onclick="deleteCetakItem(${item.id})">×</button>`;
+                    page.appendChild(slot);
+                });
+                container.appendChild(page);
+            }
+            document.getElementById('pageCounter').innerText = `Item: ${cetak_resiData.length} | Hal: ${totalPages}`;
+        }
+
+        function renderImgMode() {
+            const container = document.getElementById('canvas-image');
+            container.innerHTML = '';
+            const [pW, pH] = getPaperDim();
+            if (cetak_imageData.length === 0) {
+                document.getElementById('pageCounter').innerText = "Item: 0 | Hal: 0";
+                return;
+            }
+
+            const cropLen = parseFloat(document.getElementById('cropLenNum').value) || 5;
+            const cropThick = parseFloat(document.getElementById('cropThickNum').value) || 0.2;
+            const cropOffset = parseFloat(document.getElementById('cropOffsetNum').value) || 0;
+            const showCrop = document.getElementById('showCrop').checked;
+            const gapVal = parseFloat(document.getElementById('imgGap').value) || 0;
+
+            let pCount = 1;
+            let currentPage = createPageEl(pW, pH, pCount);
             currentPage.style.position = 'relative';
             currentPage.style.padding = '0';
             container.appendChild(currentPage);
-            
-            curX = 0; curY = 0; rowH = 0;
-            sX = 0; sY = 0; sRowH = 0;
+
+            let curX = 0,
+                curY = 0,
+                rowH = 0;
+            let sX = 0,
+                sY = 0,
+                sRowH = 0;
+
+            cetak_imageData.forEach(item => {
+                if (curX + item.w > pW) {
+                    curX = 0;
+                    curY += rowH;
+                    rowH = 0;
+                }
+                if (curY + item.h > pH) {
+                    pCount++;
+                    currentPage = createPageEl(pW, pH, pCount);
+                    currentPage.style.position = 'relative';
+                    currentPage.style.padding = '0';
+                    container.appendChild(currentPage);
+                    curX = 0;
+                    curY = 0;
+                    rowH = 0;
+                    sX = 0;
+                    sY = 0;
+                    sRowH = 0;
+                }
+                if (sX + item.w > pW && sX > 0) {
+                    sX = 0;
+                    sY += sRowH + gapVal;
+                    sRowH = 0;
+                }
+
+                const slot = document.createElement('div');
+                slot.className = 'slot img-mode';
+                if (!showCrop) slot.classList.add('no-crop');
+
+                slot.style.setProperty('--crop-len', cropLen + 'mm');
+                slot.style.setProperty('--crop-thick', cropThick + 'mm');
+                slot.style.setProperty('--crop-offset', cropOffset + 'mm');
+                slot.style.setProperty('--x-screen', sX + 'mm');
+                slot.style.setProperty('--y-screen', sY + 'mm');
+                slot.style.setProperty('--x-print', curX + 'mm');
+                slot.style.setProperty('--y-print', curY + 'mm');
+                slot.style.setProperty('--slot-width', item.w + 'mm');
+                slot.style.setProperty('--slot-height', item.h + 'mm');
+                slot.style.width = item.w + 'mm';
+                slot.style.height = item.h + 'mm';
+
+                slot.innerHTML = `
+                        <img src="${item.src}">
+                        <div class="crop-mark tl"></div>
+                        <div class="crop-mark tr"></div>
+                        <div class="crop-mark bl"></div>
+                        <div class="crop-mark br"></div>
+                        <button class="delete-btn" onclick="deleteCetakItem(${item.id})">×</button>
+                    `;
+                currentPage.appendChild(slot);
+
+                curX += item.w;
+                if (item.h > rowH) rowH = item.h;
+                sX += item.w + gapVal;
+                if (item.h > sRowH) sRowH = item.h;
+            });
+
+            document.getElementById('pageCounter').innerText = `Item: ${cetak_imageData.length} | Hal: ${pCount}`;
         }
 
-        if (sX + item.w > pW && sX > 0) {
-            sX = 0;
-            sY += sRowH + gapVal;
-            sRowH = 0;
+        function createPageEl(w, h, n) {
+            const div = document.createElement('div');
+            div.className = 'paper-page';
+            div.style.width = w + 'mm';
+            div.style.height = h + 'mm';
+            div.innerHTML = `<div class="page-label no-print">Hal ${n}</div>`;
+            return div;
         }
 
-        const slot = document.createElement('div');
-        slot.className = 'slot img-mode';
-        if (!showCrop) slot.classList.add('no-crop');
-        
-        slot.style.setProperty('--crop-len', cropLen + 'mm');
-        slot.style.setProperty('--crop-thick', cropThick + 'mm');
-        slot.style.setProperty('--crop-offset', cropOffset + 'mm');
-        
-        slot.style.setProperty('--x-screen', sX + 'mm');
-        slot.style.setProperty('--y-screen', sY + 'mm');
-        slot.style.setProperty('--x-print', curX + 'mm');
-        slot.style.setProperty('--y-print', curY + 'mm');
-        slot.style.setProperty('--slot-width', item.w + 'mm');
-        slot.style.setProperty('--slot-height', item.h + 'mm');
-        
-        slot.style.width = item.w + 'mm';
-        slot.style.height = item.h + 'mm';
-
-        slot.innerHTML = `
-            <img src="${item.src}">
-            <div class="crop-mark tl"></div>
-            <div class="crop-mark tr"></div>
-            <div class="crop-mark bl"></div>
-            <div class="crop-mark br"></div>
-            <button class="delete-btn" onclick="deleteItem(${item.id})">×</button>
-        `;
-        currentPage.appendChild(slot);
-
-        curX += item.w;
-        if (item.h > rowH) rowH = item.h;
-
-        sX += item.w + gapVal;
-        if (item.h > sRowH) sRowH = item.h;
-    });
-
-    document.getElementById('pageCounter').innerText = `Item: ${imageData.length} | Hal: ${pCount}`;
-}
-
-function createPageEl(w, h, n) {
-    const div = document.createElement('div');
-    div.className = 'paper-page';
-    div.style.width = w + 'mm';
-    div.style.height = h + 'mm';
-    div.innerHTML = `<div class="page-label no-print">Hal ${n}</div>`;
-    return div;
-}
-
-const trimCanvas = (canvas) => {
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const w = canvas.width, h = canvas.height;
-    const pixels = ctx.getImageData(0, 0, w, h);
-    const data = pixels.data;
-    let minX = w, minY = h, maxX = 0, maxY = 0, found = false;
-    for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-            const i = (y * w + x) * 4;
-            if (data[i+3] > 0 && (data[i] < 253 || data[i+1] < 253 || data[i+2] < 253)) {
-                if (x < minX) minX = x; if (x > maxX) maxX = x;
-                if (y < minY) minY = y; if (y > maxY) maxY = y;
-                found = true;
+        function deleteCetakItem(id) {
+            if (cetak_currentMode === 'resi' || cetak_currentMode === 'history') {
+                cetak_resiData = cetak_resiData.filter(i => i.id !== id);
+            } else {
+                cetak_imageData = cetak_imageData.filter(i => i.id !== id);
             }
+            updateCetakUI();
         }
-    }
-    if (!found) return canvas;
-    const p = 1;
-    const trimW = (maxX - minX) + (p * 2);
-    const trimH = (maxY - minY) + (p * 2);
-    const trimmed = document.createElement('canvas');
-    trimmed.width = trimW; trimmed.height = trimH;
-    trimmed.getContext('2d').drawImage(canvas, minX - p, minY - p, trimW, trimH, 0, 0, trimW, trimH);
-    return trimmed;
-};
 
-document.getElementById('pdfInp').onchange = async (e) => {
-    const files = Array.from(e.target.files);
-    for (let f of files) {
-        const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 2.5 });
-            const canvas = document.createElement('canvas');
-            canvas.width = viewport.width; canvas.height = viewport.height;
-            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-            const trimmedCanvas = trimCanvas(canvas);
-            const src = trimmedCanvas.toDataURL('image/jpeg', 0.9);
-            const added = addResi(src);
-            if (added) addToHistory(f.name + ' P' + i, src);
+        function clearCanvas() {
+            if (!confirm("Hapus semua?")) return;
+            if (cetak_currentMode === 'resi' || cetak_currentMode === 'history') cetak_resiData = [];
+            else cetak_imageData = [];
+            updateCetakUI();
         }
-    }
-    updateUI();
-};
 
-function addToHistory(name, src) {
-    const div = document.createElement('div');
-    div.className = 'history-item';
-    div.innerHTML = `<img src="${src}"><div>${name}</div>`;
-    div.onclick = () => { addResi(src); };
-    document.getElementById('resiHistory').prepend(div);
-}
+        function addResi(src) {
+            const exists = cetak_resiData.some(item => item.src === src);
+            if (exists) { alert('⚠️ Resi ini sudah ada di canvas!'); return false; }
+            cetak_resiData.push({ id: Date.now() + Math.random(), src });
+            updateCetakUI();
+            return true;
+        }
 
-const uploadArea = document.getElementById('uploadArea');
-const imgUpload = document.getElementById('imgUpload');
+        // ===== PDF Upload =====
+        const trimCanvas = (canvas) => {
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const w = canvas.width,
+                h = canvas.height;
+            const pixels = ctx.getImageData(0, 0, w, h);
+            const data = pixels.data;
+            let minX = w,
+                minY = h,
+                maxX = 0,
+                maxY = 0,
+                found = false;
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const i = (y * w + x) * 4;
+                    if (data[i + 3] > 0 && (data[i] < 253 || data[i + 1] < 253 || data[i + 2] < 253)) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                        found = true;
+                    }
+                }
+            }
+            if (!found) return canvas;
+            const p = 1;
+            const trimW = (maxX - minX) + (p * 2);
+            const trimH = (maxY - minY) + (p * 2);
+            const trimmed = document.createElement('canvas');
+            trimmed.width = trimW;
+            trimmed.height = trimH;
+            trimmed.getContext('2d').drawImage(canvas, minX - p, minY - p, trimW, trimH, 0, 0, trimW, trimH);
+            return trimmed;
+        };
 
-uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('dragover'); });
-uploadArea.addEventListener('drop', (e) => {
-    e.preventDefault(); uploadArea.classList.remove('dragover');
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-    handleImageUpload(files);
-});
-imgUpload.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files);
-    handleImageUpload(files);
-    imgUpload.value = '';
-});
+        document.getElementById('pdfInp').onchange = async (e) => {
+            const files = Array.from(e.target.files);
+            for (let f of files) {
+                const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 2.5 });
+                    const canvas = document.createElement('canvas');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                    const trimmedCanvas = trimCanvas(canvas);
+                    const src = trimmedCanvas.toDataURL('image/jpeg', 0.9);
+                    const added = addResi(src);
+                    if (added) addToHistory(f.name + ' P' + i, src);
+                }
+            }
+            updateCetakUI();
+        };
 
-function handleImageUpload(files) {
-    if (files.length === 0) return;
-    const maxSize = 10 * 1024 * 1024;
-    files.forEach(file => {
-        if (file.size > maxSize) { alert(`⚠️ "${file.name}" terlalu besar (max 10MB)`); return; }
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            const uploadedImg = { id: Date.now() + Math.random(), name: file.name, dataUrl: dataUrl };
-            uploadedImages.push(uploadedImg);
+        function addToHistory(name, src) {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `<img src="${src}"><div>${name}</div>`;
+            div.onclick = () => { addResi(src); };
+            document.getElementById('resiHistory').prepend(div);
+        }
+
+        // ===== Image Upload =====
+        const uploadArea = document.getElementById('uploadArea');
+        const imgUpload = document.getElementById('imgUpload');
+
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault();
+            uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('dragover'); });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            handleImageUpload(files);
+        });
+        imgUpload.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleImageUpload(files);
+            imgUpload.value = '';
+        });
+
+        function handleImageUpload(files) {
+            if (files.length === 0) return;
+            const maxSize = 10 * 1024 * 1024;
+            files.forEach(file => {
+                if (file.size > maxSize) { alert(`⚠️ "${file.name}" terlalu besar (max 10MB)`); return; }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataUrl = e.target.result;
+                    const uploadedImg = { id: Date.now() + Math.random(), name: file.name, dataUrl: dataUrl };
+                    cetak_uploadedImages.push(uploadedImg);
+                    renderUploadedImages();
+                    cetak_imageData.push({
+                        id: uploadedImg.id,
+                        src: dataUrl,
+                        w: parseInt(document.getElementById('imgW').value),
+                        h: parseInt(document.getElementById('imgH').value),
+                        gap: 0
+                    });
+                    updateCetakUI();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderUploadedImages() {
+            const container = document.getElementById('uploadPreview');
+            container.innerHTML = '';
+            cetak_uploadedImages.forEach((img, idx) => {
+                const div = document.createElement('div');
+                div.className = 'upload-preview-item';
+                div.innerHTML = `
+                        <button class="remove-btn" onclick="removeUploadedImage(${idx}, event)">×</button>
+                        <img src="${img.dataUrl}" onclick="addUploadedToCanvas(${idx})">
+                        <div class="name">${img.name}</div>
+                    `;
+                container.appendChild(div);
+            });
+        }
+
+        function removeUploadedImage(idx, event) {
+            event.stopPropagation();
+            const removedId = cetak_uploadedImages[idx].id;
+            cetak_uploadedImages.splice(idx, 1);
+            cetak_imageData = cetak_imageData.filter(item => item.id !== removedId);
             renderUploadedImages();
-            imageData.push({
-                id: uploadedImg.id, src: dataUrl,
+            updateCetakUI();
+        }
+
+        function addUploadedToCanvas(idx) {
+            const img = cetak_uploadedImages[idx];
+            cetak_imageData.push({
+                id: Date.now() + Math.random(),
+                src: img.dataUrl,
                 w: parseInt(document.getElementById('imgW').value),
                 h: parseInt(document.getElementById('imgH').value),
                 gap: 0
             });
-            updateUI();
-        };
-        reader.readAsDataURL(file);
-    });
-}
-
-function renderUploadedImages() {
-    const container = document.getElementById('uploadPreview');
-    container.innerHTML = '';
-    uploadedImages.forEach((img, idx) => {
-        const div = document.createElement('div');
-        div.className = 'upload-preview-item';
-        div.innerHTML = `
-            <button class="remove-btn" onclick="removeUploadedImage(${idx}, event)">×</button>
-            <img src="${img.dataUrl}" onclick="addUploadedToCanvas(${idx})">
-            <div class="name">${img.name}</div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-function removeUploadedImage(idx, event) {
-    event.stopPropagation();
-    const removedId = uploadedImages[idx].id;
-    uploadedImages.splice(idx, 1);
-    imageData = imageData.filter(item => item.id !== removedId);
-    renderUploadedImages();
-    updateUI();
-}
-
-function addUploadedToCanvas(idx) {
-    const img = uploadedImages[idx];
-    imageData.push({
-        id: Date.now() + Math.random(), src: img.dataUrl,
-        w: parseInt(document.getElementById('imgW').value),
-        h: parseInt(document.getElementById('imgH').value),
-        gap: 0
-    });
-    updateUI();
-}
-
-document.getElementById('paperType').onchange = (e) => {
-    document.getElementById('customDim').style.display = e.target.value === 'custom' ? 'inline' : 'none';
-    updateUI();
-};
-
-const triggers = ['custW','custH','imgW','imgH','imgGap','cropLen','cropLenNum','cropThick','cropThickNum','cropOffset','cropOffsetNum','showCrop'];
-triggers.forEach(id => { const el = document.getElementById(id); if (el) el.oninput = updateUI; });
-
-const rWR = document.getElementById('resiWidthRange'), rWN = document.getElementById('resiWidthNum');
-const rHR = document.getElementById('resiHeightRange'), rHN = document.getElementById('resiHeightNum');
-rWR.oninput = () => { rWN.value = rWR.value; updateUI(); };
-rWN.oninput = () => { rWR.value = rWN.value; updateUI(); };
-rHR.oninput = () => { rHN.value = rHR.value; updateUI(); };
-rHN.oninput = () => { rHR.value = rHN.value; updateUI(); };
-
-const sync = (rangeId, numId) => {
-    const r = document.getElementById(rangeId), n = document.getElementById(numId);
-    r.oninput = () => { n.value = r.value; updateUI(); };
-    n.oninput = () => { r.value = n.value; updateUI(); };
-};
-sync('cropLen','cropLenNum'); sync('cropThick','cropThickNum'); sync('cropOffset','cropOffsetNum');
-
-
-// LOGIKA: Menyimpan histori cetak resi ke localStorage
-function saveResiPrintHistory() {
-    const [pW, pH] = getPaperDim();
-    const rW = parseInt(document.getElementById('resiWidthNum').value);
-    const rH = parseInt(document.getElementById('resiHeightNum').value);
-    const cols = Math.floor(pW / rW) || 1;
-    const rows = Math.floor(pH / rH) || 1;
-    const perPage = cols * rows; // jumlah resi dalam satu lembar
-    const totalResi = resiData.length;
-    const totalPages = Math.ceil(totalResi / perPage) || 0;
-    const paperType = document.getElementById('paperType').value;
-    const paperLabel = paperType === 'custom' ? `Karso (${pW}x${pH}mm)` : `${paperType} (${pW}x${pH}mm)`;
-
-    // Cooldown check untuk menghindari pencatatan ganda dalam waktu singkat
-    const now = Date.now();
-    if (window.lastLoggedPrint && (now - window.lastLoggedPrint < 1000)) {
-        return;
-    }
-    window.lastLoggedPrint = now;
-
-    const entry = {
-        id: now,
-        timestamp: new Date().toLocaleString('id-ID', { 
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit'
-        }),
-        totalResi: totalResi,
-        perPage: perPage,
-        totalPages: totalPages,
-        paperLabel: paperLabel,
-        resiDim: `${rW}x${rH}mm`
-    };
-
-    let history = JSON.parse(localStorage.getItem('resi_print_history') || '[]');
-    history.unshift(entry);
-    localStorage.setItem('resi_print_history', JSON.stringify(history));
-    renderPrintHistory();
-}
-
-function renderPrintHistory() {
-    const container = document.getElementById('historyLogList');
-    if (!container) return;
-    const history = JSON.parse(localStorage.getItem('resi_print_history') || '[]');
-    
-    if (history.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:11px; padding:20px 0;">Belum ada histori cetak resi.</div>';
-        const totalTodayEl = document.getElementById('totalResiToday');
-        if (totalTodayEl) totalTodayEl.innerText = '0';
-        return;
-    }
-
-    // 1. PENGELOMPOKAN BERDASARKAN TANGGAL
-    const groups = {};
-    history.forEach(item => {
-        const itemDate = new Date(item.id);
-        const dateStr = itemDate.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
-        
-        if (!groups[dateStr]) {
-            groups[dateStr] = {
-                dateLabel: dateStr,
-                items: [],
-                totalSum: 0
-            };
+            updateCetakUI();
         }
-        groups[dateStr].items.push(item);
-        groups[dateStr].totalSum += (item.totalResi || 0); // Menjumlahkan total resi pada tanggal ini
-    });
 
-    // 2. UPDATE TOTAL HARI INI DI PANEL RINGKASAN ATAS
-    const todayStr = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
-    const totalToday = groups[todayStr] ? groups[todayStr].totalSum : 0;
-    const totalTodayEl = document.getElementById('totalResiToday');
-    if (totalTodayEl) {
-        totalTodayEl.innerText = totalToday;
-    }
+        // ===== Asset Grid =====
+        function loadAssets() {
+            const grid = document.getElementById('assetGrid');
+            grid.innerHTML = '<div style="grid-column:span 2; text-align:center; color:white; font-size:11px;">Memuat gambar...</div>';
+            cetak_assetList = imageFilenames.map(name => ({
+                id: Math.random(),
+                name: name,
+                dataUrl: 'images/' + name
+            }));
+            renderAssets();
+        }
 
-    // 3. RE-ORDER & CETAK KELOMPOK KE HTML (Tanggal Terbaru Berada Paling Atas)
-    const sortedDates = Object.keys(groups).sort((a, b) => {
-        const timeA = groups[a].items[0].id;
-        const timeB = groups[b].items[0].id;
-        return timeB - timeA;
-    });
+        function renderAssets() {
+            const grid = document.getElementById('assetGrid');
+            grid.innerHTML = '';
+            if (cetak_assetList.length === 0) {
+                grid.innerHTML =
+                    '<div style="grid-column:span 2; text-align:center; color:white; font-size:11px;">Tidak ada gambar. Tekan MUAT.</div>';
+                return;
+            }
+            cetak_assetList.forEach((asset, idx) => {
+                const div = document.createElement('div');
+                div.className = 'asset-item';
+                div.innerHTML =
+                    `<img src="${asset.dataUrl}" loading="lazy" onclick="addAssetToCanvas(${idx})" onerror="this.style.display='none'"><div class="name">${asset.name}</div><button class="rotate-btn" onclick="rotateAsset(${idx})">↻</button>`;
+                grid.appendChild(div);
+            });
+        }
 
-    let html = '';
-    sortedDates.forEach(date => {
-        const group = groups[date];
-        html += `
-            <div class="history-group" style="margin-bottom: 16px;">
-                <!-- Header Tanggal + Total Akumulatif Cetak Hari Tersebut -->
-                <div style="background: #0f172a; border-left: 4px solid #10b981; padding: 8px 10px; font-size: 11px; font-weight: bold; color: #f1f5f9; display: flex; justify-content: space-between; align-items: center; border-radius: 4px; margin-bottom: 8px;">
-                    <span>📅 Tanggal: ${group.dateLabel}</span>
-                    <span style="color: #10b981; font-size: 12px; font-weight: 900;">Total: ${group.totalSum} Resi</span>
-                </div>
-                <div>
-        `;
+        function rotateAsset(idx) {
+            const img = new Image();
+            img.src = cetak_assetList[idx].dataUrl;
+            img.decode().catch(() => {});
+            if (!img.width || !img.height) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = img.height;
+            canvas.height = img.width;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(90 * Math.PI / 180);
+            ctx.drawImage(img, -img.width / 2, -img.height / 2);
+            cetak_assetList[idx].dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            renderAssets();
+        }
 
-        // Menampilkan kartu log sesi cetak di dalam kelompok tanggal
-        group.items.forEach(item => {
-            const timeOnly = item.timestamp.split(',')[1] || item.timestamp;
-            html += `
-                <div class="history-log-card" style="margin-bottom: 6px;">
-                    <button onclick="deleteHistoryItem(${item.id}, event)" style="position: absolute; top: 6px; right: 8px; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 14px; font-weight: bold;">×</button>
-                    <div style="color: #94a3b8; font-size: 10px; margin-bottom: 5px; font-weight: bold;">🕒 Jam: ${timeOnly}</div>
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <div>Kertas: <span style="color: #60a5fa; font-weight: bold;">${item.paperLabel}</span></div>
-                        <div>Ukuran Resi: <span style="font-weight: bold;">${item.resiDim}</span></div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px dashed #475569; padding-top: 4px;">
-                            <span>Cetak Sesi Ini: <strong class="highlight">${item.totalResi} resi</strong></span>
-                            <span>Per Lembar: <strong style="color: #10b981;">${item.perPage}</strong></span>
-                        </div>
-                        <div>Total Halaman: <strong>${item.totalPages}</strong></div>
+        function addAssetToCanvas(idx) {
+            if (!cetak_assetList[idx]) return;
+            cetak_imageData.push({
+                id: Date.now() + Math.random(),
+                src: cetak_assetList[idx].dataUrl,
+                w: parseInt(document.getElementById('imgW').value),
+                h: parseInt(document.getElementById('imgH').value),
+                gap: 0
+            });
+            updateCetakUI();
+        }
+
+        // ===== Chat Images UI di modul cetak =====
+        function updateChatImagesUI() {
+            const container = document.getElementById('chatImagesContainer');
+            const countEl = document.getElementById('chatImageCount');
+            if (!container) return;
+            if (sharedImages.length === 0) {
+                container.innerHTML = '<div style="color:#94a3b8; font-size:10px; padding:8px 0;">Belum ada gambar dari chat.</div>';
+                if (countEl) countEl.innerText = '0';
+                return;
+            }
+            if (countEl) countEl.innerText = sharedImages.length;
+
+            container.innerHTML = sharedImages.map((img, idx) => `
+                    <div class="chat-image-item" title="${img.name} (dari ${img.from})">
+                        <img src="${img.src}" onclick="addChatImageToCanvas(${idx})">
+                        <button class="add-btn" onclick="addChatImageToCanvas(${idx})">+</button>
                     </div>
-                </div>
-            `;
+                `).join('');
+        }
+
+        function addChatImageToCanvas(idx) {
+            const img = sharedImages[idx];
+            if (!img) return;
+            cetak_imageData.push({
+                id: Date.now() + Math.random(),
+                src: img.src,
+                w: parseInt(document.getElementById('imgW').value),
+                h: parseInt(document.getElementById('imgH').value),
+                gap: 0
+            });
+            updateCetakUI();
+            showToast('✅ Gambar ditambahkan ke canvas cetak.');
+        }
+
+        // ===== Print History =====
+        function saveResiPrintHistory() {
+            const [pW, pH] = getPaperDim();
+            const rW = parseInt(document.getElementById('resiWidthNum').value);
+            const rH = parseInt(document.getElementById('resiHeightNum').value);
+            const cols = Math.floor(pW / rW) || 1;
+            const rows = Math.floor(pH / rH) || 1;
+            const perPage = cols * rows;
+            const totalResi = cetak_resiData.length;
+            const totalPages = Math.ceil(totalResi / perPage) || 0;
+            const paperType = document.getElementById('paperType').value;
+            const paperLabel = paperType === 'custom' ? `Karso (${pW}x${pH}mm)` : `${paperType} (${pW}x${pH}mm)`;
+
+            const now = Date.now();
+            if (window.lastLoggedPrint && (now - window.lastLoggedPrint < 1000)) return;
+            window.lastLoggedPrint = now;
+
+            const entry = {
+                id: now,
+                timestamp: new Date().toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                totalResi: totalResi,
+                perPage: perPage,
+                totalPages: totalPages,
+                paperLabel: paperLabel,
+                resiDim: `${rW}x${rH}mm`
+            };
+
+            let history = JSON.parse(localStorage.getItem('resi_print_history') || '[]');
+            history.unshift(entry);
+            localStorage.setItem('resi_print_history', JSON.stringify(history));
+            renderPrintHistory();
+        }
+
+        function renderPrintHistory() {
+            const container = document.getElementById('historyLogList');
+            if (!container) return;
+            const history = JSON.parse(localStorage.getItem('resi_print_history') || '[]');
+
+            if (history.length === 0) {
+                container.innerHTML =
+                    '<div style="text-align:center; color:#94a3b8; font-size:10px; padding:16px 0;">Belum ada histori cetak resi.</div>';
+                const totalTodayEl = document.getElementById('totalResiToday');
+                if (totalTodayEl) totalTodayEl.innerText = '0';
+                return;
+            }
+
+            const groups = {};
+            history.forEach(item => {
+                const itemDate = new Date(item.id);
+                const dateStr = itemDate.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit',
+                    day: '2-digit' });
+                if (!groups[dateStr]) {
+                    groups[dateStr] = { dateLabel: dateStr, items: [], totalSum: 0 };
+                }
+                groups[dateStr].items.push(item);
+                groups[dateStr].totalSum += (item.totalResi || 0);
+            });
+
+            const todayStr = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const totalToday = groups[todayStr] ? groups[todayStr].totalSum : 0;
+            const totalTodayEl = document.getElementById('totalResiToday');
+            if (totalTodayEl) totalTodayEl.innerText = totalToday;
+
+            const sortedDates = Object.keys(groups).sort((a, b) => {
+                const timeA = groups[a].items[0].id;
+                const timeB = groups[b].items[0].id;
+                return timeB - timeA;
+            });
+
+            let html = '';
+            sortedDates.forEach(date => {
+                const group = groups[date];
+                html += `
+                        <div class="history-group" style="margin-bottom: 14px;">
+                            <div style="background: #0f172a; border-left: 4px solid #10b981; padding: 6px 10px; font-size: 10px; font-weight: bold; color: #f1f5f9; display: flex; justify-content: space-between; align-items: center; border-radius: 4px; margin-bottom: 6px;">
+                                <span>📅 Tanggal: ${group.dateLabel}</span>
+                                <span style="color: #10b981; font-size: 11px; font-weight: 900;">Total: ${group.totalSum} Resi</span>
+                            </div>
+                            <div>
+                    `;
+                group.items.forEach(item => {
+                    const timeOnly = item.timestamp.split(',')[1] || item.timestamp;
+                    html += `
+                            <div class="history-log-card" style="margin-bottom: 4px;">
+                                <button onclick="deleteHistoryItem(${item.id}, event)" style="position: absolute; top: 4px; right: 6px; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 12px; font-weight: bold;">×</button>
+                                <div style="color: #94a3b8; font-size: 9px; margin-bottom: 4px; font-weight: bold;">🕒 Jam: ${timeOnly}</div>
+                                <div style="display: flex; flex-direction: column; gap: 3px;">
+                                    <div>Kertas: <span style="color: #60a5fa; font-weight: bold;">${item.paperLabel}</span></div>
+                                    <div>Ukuran Resi: <span style="font-weight: bold;">${item.resiDim}</span></div>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 3px; border-top: 1px dashed #475569; padding-top: 3px;">
+                                        <span>Cetak Sesi Ini: <strong class="highlight">${item.totalResi} resi</strong></span>
+                                        <span>Per Lembar: <strong style="color: #10b981;">${item.perPage}</strong></span>
+                                    </div>
+                                    <div>Total Halaman: <strong>${item.totalPages}</strong></div>
+                                </div>
+                            </div>
+                        `;
+                });
+                html += `</div></div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function deleteHistoryItem(id, event) {
+            event.stopPropagation();
+            if (!confirm("Hapus catatan cetak ini?")) return;
+            let history = JSON.parse(localStorage.getItem('resi_print_history') || '[]');
+            history = history.filter(item => item.id !== id);
+            localStorage.setItem('resi_print_history', JSON.stringify(history));
+            renderPrintHistory();
+        }
+
+        function clearPrintHistory() {
+            if (!confirm("Hapus semua histori cetak resi?")) return;
+            localStorage.removeItem('resi_print_history');
+            renderPrintHistory();
+        }
+
+        // ===== Event listener untuk print =====
+        window.addEventListener('beforeprint', function() {
+            if (document.getElementById('module-cetak').classList.contains('active')) {
+                if (cetak_currentMode === 'resi' && cetak_resiData.length > 0) {
+                    saveResiPrintHistory();
+                }
+            }
+            setTimeout(() => {
+                document.querySelectorAll('.slot.img-mode img').forEach(img => {
+                    if (!img.complete) img.src = img.src;
+                });
+            }, 150);
         });
 
-        html += `
-                </div>
-            </div>
-        `;
-    });
+        // ===== Event listeners untuk slider =====
+        document.getElementById('paperType').onchange = (e) => {
+            document.getElementById('customDim').style.display = e.target.value === 'custom' ? 'inline' : 'none';
+            updateCetakUI();
+        };
 
-    container.innerHTML = html;
-}
+        const triggers = ['custW', 'custH', 'imgW', 'imgH', 'imgGap', 'cropLen', 'cropLenNum', 'cropThick', 'cropThickNum',
+            'cropOffset', 'cropOffsetNum', 'showCrop'
+        ];
+        triggers.forEach(id => { const el = document.getElementById(id); if (el) el.oninput = updateCetakUI; });
 
-function deleteHistoryItem(id, event) {
-    event.stopPropagation();
-    if (!confirm("Hapus catatan cetak ini?")) return;
-    let history = JSON.parse(localStorage.getItem('resi_print_history') || '[]');
-    history = history.filter(item => item.id !== id);
-    localStorage.setItem('resi_print_history', JSON.stringify(history));
-    renderPrintHistory();
-}
+        const rWR = document.getElementById('resiWidthRange'),
+            rWN = document.getElementById('resiWidthNum');
+        const rHR = document.getElementById('resiHeightRange'),
+            rHN = document.getElementById('resiHeightNum');
+        rWR.oninput = () => { rWN.value = rWR.value;
+            updateCetakUI(); };
+        rWN.oninput = () => { rWR.value = rWN.value;
+            updateCetakUI(); };
+        rHR.oninput = () => { rHN.value = rHR.value;
+            updateCetakUI(); };
+        rHN.oninput = () => { rHR.value = rHN.value;
+            updateCetakUI(); };
 
-function clearPrintHistory() {
-    if (!confirm("Hapus semua histori cetak resi?")) return;
-    localStorage.removeItem('resi_print_history');
-    renderPrintHistory();
-}
+        const sync = (rangeId, numId) => {
+            const r = document.getElementById(rangeId),
+                n = document.getElementById(numId);
+            if (r && n) {
+                r.oninput = () => { n.value = r.value;
+                    updateCetakUI(); };
+                n.oninput = () => { r.value = n.value;
+                    updateCetakUI(); };
+            }
+        };
+        sync('cropLen', 'cropLenNum');
+        sync('cropThick', 'cropThickNum');
+        sync('cropOffset', 'cropOffsetNum');
 
-window.addEventListener('beforeprint', function() {
-    // Menyimpan log cetak apabila pengguna sedang berada di halaman cetak resi dan terdapat item resi
-    if (currentMode === 'resi' && resiData.length > 0) {
-        saveResiPrintHistory();
-    }
-    updateUI();
-    setTimeout(() => {
-        document.querySelectorAll('.slot.img-mode img').forEach(img => {
-            if (!img.complete) img.src = img.src;
-        });
-    }, 150);
-});
+        // ===== Inisialisasi =====
+        loadAssets();
+        renderPrintHistory();
+        updateChatImagesUI();
+        setTimeout(() => updateChatImagesUI(), 500);
 
-// Inisialisasi: load assets otomatis & siapkan daftar riwayat cetak saat pertama kali dibuka
-loadAssets();
-renderPrintHistory();
-</script>
+        console.log('✅ Aplikasi terintegrasi siap pakai.');
+    </script>
 </body>
 </html>
